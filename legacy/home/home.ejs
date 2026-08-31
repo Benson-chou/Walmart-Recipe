@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <title>Home</title>
+    <!-- the form awesome library is used to add icons to our form -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- include the stylesheet file -->
+    <link href="/home.css" rel="stylesheet" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+    </style>
+    <script>
+        function selectAll() {
+            var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            var button = document.querySelector('.select-all');
+            let allChecked = true;
+            for (let box of checkboxes) {
+                if (box.checked == false) allChecked = false; 
+            }
+            if (allChecked == true) {
+                button.textContent = 'Select all'
+                checkboxes.forEach(box => box.click())
+            } else {
+                checkboxes.forEach(box => {
+                    if (box.checked == false) box.click()
+                    button.textContent = 'Deselect all'
+                })
+            }
+        }
+        function savebutton(event, recipe_name, recipe_ingredients, recipe_description, loggedin, username) {
+            var save_button = event.currentTarget;
+            var icon = save_button.querySelector('i');
+            // This works but not sure y regular and solid looks the same :(
+            if (!loggedin) {
+                alert('Please Log in/Sign up to save ')
+                return;
+            }
+            if (icon.classList.contains("bx-bookmark-heart")) {
+                icon.classList.remove("bx-bookmark-heart")
+                icon.classList.add("bxs-bookmark-heart")
+                console.log(icon.classList);
+                // Save the recipe here by sending POST request
+                fetch('/home/save', {
+                    method: 'POST', 
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }, 
+                    body: JSON.stringify({
+                        recipe_name: recipe_name, 
+                        recipe_ingredients: recipe_ingredients, 
+                        recipe_description: recipe_description, 
+                        username: username
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Recipe saved: ', data);
+                })
+                .catch((error) => {
+                    console.log('Error saving recipe: ', error);
+                    // Revert icon if error
+                    icon.classList.remove("bxs-bookmark-heart")
+                    icon.classList.add("bx-bookmark-heart")
+                });                
+            } else {
+                icon.classList.remove("bxs-bookmark-heart")
+                icon.classList.add("bx-bookmark-heart")
+                console.log(icon.classList);
+                // Delete the recipe by sending POST request
+                fetch('/home/delete', {
+                    method: 'POST', 
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }, 
+                    body: JSON.stringify({
+                        recipe_name: recipe_name, 
+                        username: username
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Recipe deleted:', data);
+                })
+                .catch((error) => {
+                    console.error('Error deleting recipe:', error);
+                    // Revert icon if error
+                    icon.classList.remove("bx-bookmark-heart")
+                    icon.classList.add("bxs-bookmark-heart")
+                });
+            }
+        }
+
+        function expand(event) {
+            const toggleButton = event.currentTarget;
+            const card = toggleButton.parentNode;
+            card.classList.toggle('active');
+            console.log(card.classList);
+        }
+    </script>
+</head>
+
+<body>
+    <div id="preloader"></div>
+    <div id="recipe-loader"></div>
+    <div class="header-container" id="contents">
+        <div class="header">
+            <div class="logo">Loblaws Recipe</div>
+            <ul class="links">
+                <% if(!loggedin) {%>
+                    <li><a href="../user/">Guest</a></li>
+                    <li><a href="../login/">Login</a></li>
+                    <li><a href="../signup/">Sign up</a></li>
+                <% } else {%>
+                    <li><a href="../user/"><%= username %></a></li>
+                    <li><a href="../login/">Log out</a></li>
+                <% }%> 
+                <li>
+                    <div class="github">
+                        <a href="https://github.com/Benson-chou/loblawRecipe" target="_blank">
+                            <img class="cat-logo" src="/github-mark-white.png" alt="GitHub Cat Logo">
+                            <img class="text-logo" src="/GitHub_Logo_White.png" alt="GitHub Text Logo">
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- <div class="location">
+        <form id="locationBox" action="/location" method="post">
+            <label for="postal code">Location: </label>
+            <% if(location){%>
+                <input type="text" name="postal code" value="<%=location%>" placeholder="Postal Code">
+            <% } else{ %>
+                <input type="text" name="postal code" placeholder="Postal Code">
+            <% } %>
+            <input type="submit" name="location" value="Search">
+        </form>
+    </div> -->
+    <div class="content-container">
+        <div class="welcome">
+            <p class="welcome-message">Select the items you want and let Google Gemini AI generate the perfect recipe for you!</p>
+        </div>
+        
+        <div class="items">
+            <h2>Here is the flyer for this week at your local Loblaws</h2>
+            <div class="table">
+                <form id="itemsForm" action="/home" method="post">
+                    <table id="headers">
+                        <thead>
+                            <th id="checkbox"><button type="button" class="select-all" onclick="selectAll()">Select all</button></th>
+                            <th id="item_image"></th>
+                            <th id="itemname">Item Name</th>
+                            <th id="bonuspoints">Discounted Price (CAD)</th>
+                            <th id="condition">Extra Conditions</th>
+                        </thead>
+                        <tbody>
+                            <% if(items) {%>
+                                <% items.forEach(item=> { %>
+                                    <tr>
+                                        <td><input type="checkbox" name="itemCheckbox" value=<%= item.item_name %> data-price=<%= item.price%> onclick="updatePrice(this)"> 
+                                            <input type="hidden" name="itemPrice" value=<%= item.price%>>
+                                        </td>
+                                        <td><img src="<%= item.image%>" class="item-image"></td>
+                                        <td><%= item.item_name %></td>
+                                        <td><%= item.price %></td>
+                                        <td><%= item.sale_story%></td>
+                                    </tr>
+                                <% }); %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                    <div class="location">
+                        <p>
+                            Current location: <span class="current-postal"><%= location %></span>
+                            <span class="material-symbols-outlined" title="Change in profile page">info</span>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="parameters">
+            <div class="parameters-container">
+                <label for="Creativity">Creativity: </label>
+                <div class="creativity-container">
+                    <input form="itemsForm" type="range" min="0" max="10" step="1" value="0" name="creativity" id="Creativity" oninput="this.nextElementSibling.value = this.value">
+                    <output>0</output>
+                </div>
+                <label for="Budget">Budget (CAD): </label>
+                <input form="itemsForm" type="number" step=any min="0" name = budget id="Budget" required>
+                <label for="allergies"> Allergies:</label>
+                <% if(allergies) {%>
+                    <input form="itemsForm" type="text" name="allergies" value= "<%= allergies %>" id="allergies">
+                <% } else{ %>
+                    <input form="itemsForm" type="text" name="allergies" value = 'None' id="allergies">
+                <% } %>
+                <% if(item_message.length > 0) {%>
+                    <div class="alert-fail">
+                        <%= item_message %>
+                    </div>
+                <% } %>
+                <input form="itemsForm" type="submit" value="Generate Recipes" name="items" class="submit-button">
+            </div>
+            <p class="generate-message"><span>Help Gemini know you better!</span> Fill out these fields and submit to get customized recipes made just for you.</p>
+        </div>
+
+        <!-- Where the response will be displayed -->
+        <% if(recipes.length > 0) {%>
+            <div class="recipes">
+                <div class="big-container">         
+                    <p id="recipe-title">My recipes</p>
+                    <!-- <div class="cards-container"> -->
+                        <% recipes.forEach(recipe=> { %>
+                            <div class="card">
+                                <img class="food" src="https://pub-3626123a908346a7a8be8d9295f44e26.r2.dev/generations/f5cdf89b-b899-4673-9228-f769890674fe-0.png" alt="Lago di Braies">
+                                <div class="details">
+                                    <div class="name"><%= recipe.Recipe_name %></div>
+                                    <p class="ingredients">Ingredients</p>
+                                    <ul class="ingredient-list">
+                                        <% recipe.Ingredients.split("\n").forEach(function(ingredient) { %>
+                                            <% if (ingredient.trim()) { %>
+                                                <li><%= ingredient.trim() %></li>
+                                            <% } %>
+                                        <% }) %>
+                                    </ul>
+                                    <p class="instructions">
+                                        <span id="instructions-title">Instructions</span>
+                                        <% recipe.Instructions.split("\n").forEach(instruction => { %>
+                                            <% if (instruction.trim()) { %>
+                                                <span><%= instruction.trim() %></span>
+                                            <% } %>
+                                        <% }) %>
+                                    </p>
+                                </div>
+                                    <button class="expand-toggle" onclick="expand(event)">
+                                        <i class='bx bx-chevron-down' ></i>
+                                        <i class='bx bx-x' ></i>
+                                    </button>
+                                    
+                                    <button class="save_button" onclick="savebutton(event, '<%= recipe.Recipe_name%>', `<%= recipe.Ingredients%>`, `<%= recipe.Instructions%>`, '<%= loggedin%>', '<%= username%>')" 
+                                        value="<%= recipe.Recipe_name%>">
+                                        <!-- <i class="fa fa-regular fa-bookmark"></i> -->
+                                        <!-- <i class="fa fa-solid fa-flag"></i> -->
+                                        <i class='bx bx-bookmark-heart' ></i>
+                                    </button>
+                            </div>
+                        <% }); %>
+                    <!-- </div> -->
+                </div>
+            </div>
+        <% } %>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // console.log(sessionStorage.getItem('fromLoginPage'));
+            // if (sessionStorage.getItem('fromLoginPage') === 'true') {
+            //     $(window).on("load", function () {
+            //         setTimeout(function() {
+            //             $("#preloader").fadeOut("slow");
+            //             sessionStorage.removeItem('fromLoginPage');
+            //         }, 1000); 
+            //     });
+            // } else {
+            //     $("#preloader").hide(); 
+            // }
+
+            $("#itemsForm").on("submit", function(e) {
+                $("#recipe-loader").fadeIn("slow", "swing");
+                $(window).on("load", function () {
+                    // $("#preloader").hide();
+                    setTimeout(function() {
+                        $("#recipe-loader").fadeOut("slow");
+                    }, 3000);
+                })   
+            });
+        });
+    </script>
+</body>

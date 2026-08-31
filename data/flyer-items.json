@@ -1,0 +1,74 @@
+[
+  {
+    "item_name": "Organic Bananas",
+    "price": 1.99,
+    "image": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200&h=200&fit=crop",
+    "sale_story": "Save $1 when you buy 2 bunches"
+  },
+  {
+    "item_name": "Chicken Breast",
+    "price": 8.99,
+    "image": "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=200&h=200&fit=crop",
+    "sale_story": "$2 off / lb this week"
+  },
+  {
+    "item_name": "Roma Tomatoes",
+    "price": 2.49,
+    "image": "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=200&h=200&fit=crop",
+    "sale_story": "In-store special"
+  },
+  {
+    "item_name": "Whole Wheat Bread",
+    "price": 3.49,
+    "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&h=200&fit=crop",
+    "sale_story": "Buy 1 get 1 50% off"
+  },
+  {
+    "item_name": "Cheddar Cheese Block",
+    "price": 5.99,
+    "image": "https://images.unsplash.com/photo-1618164436241-4473940d1f5c?w=200&h=200&fit=crop",
+    "sale_story": "PC product — member price"
+  },
+  {
+    "item_name": "Baby Spinach",
+    "price": 3.99,
+    "image": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=200&h=200&fit=crop",
+    "sale_story": "Fresh this week"
+  },
+  {
+    "item_name": "Atlantic Salmon Fillet",
+    "price": 12.99,
+    "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=200&h=200&fit=crop",
+    "sale_story": "$3 off when you spend $20+ on seafood"
+  },
+  {
+    "item_name": "Greek Yogurt 500g",
+    "price": 4.49,
+    "image": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=200&h=200&fit=crop",
+    "sale_story": "Multi-buy savings"
+  },
+  {
+    "item_name": "Avocados",
+    "price": 1.5,
+    "image": "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=200&h=200&fit=crop",
+    "sale_story": "Each — while supplies last"
+  },
+  {
+    "item_name": "Basmati Rice 2kg",
+    "price": 6.99,
+    "image": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200&h=200&fit=crop",
+    "sale_story": "Pantry staple deal"
+  },
+  {
+    "item_name": "Broccoli Crowns",
+    "price": 2.99,
+    "image": "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=200&h=200&fit=crop",
+    "sale_story": "Local produce"
+  },
+  {
+    "item_name": "Ground Beef Lean",
+    "price": 7.49,
+    "image": "https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=200&h=200&fit=crop",
+    "sale_story": "Family pack pricing"
+  }
+]

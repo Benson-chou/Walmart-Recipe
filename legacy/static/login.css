@@ -1,0 +1,155 @@
+:root {
+  --theme-color: #3274d6;
+  --font-color: #ffffff
+}
+
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "segoe ui", roboto, oxygen, ubuntu, cantarell, "fira sans", "droid sans", "helvetica neue", Arial, sans-serif;
+  font-size: 16px;
+  margin: 0;
+}
+
+body {
+  background-image: url(goggles.jpg);
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.login {
+  width: 400px;
+  background-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 9px 0 rgba(0, 0, 0, 0.3);
+  margin: 100px auto;
+}
+
+.login h1 {
+  text-align: center;
+  color: #5b6574;
+  font-size: 24px;
+  padding: 20px 0 20px 0;
+  border-bottom: 1px solid #dee0e4;
+}
+
+.login form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 20px 0px;
+}
+
+.login form label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50px;
+  height: 50px;
+  background-color: var(--theme-color);
+  color: var(--font-color);
+}
+
+.login form input[type="password"],
+.login form input[type="text"] {
+  width: 310px;
+  height: 50px;
+  border: 1px solid #dee0e4;
+  margin-bottom: 20px;
+  padding: 0 15px;
+}
+
+.login form input[type="submit"] {
+  width: 75%;
+  margin: 15px 0px;
+  padding: 12px;
+  border: 0;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 30px;
+  background-image: linear-gradient(90deg, rgba(253, 219, 146, 1), rgba(209, 253, 254, 1));
+  transition: background-color 0.2s;
+  color: rgb(163, 165, 168);
+}
+
+.login form [type="text"]:focus,
+.login form [type="password"]:focus {
+  /* border: 2.5px solid #22cfc9; */
+  outline: transparent;
+  border-radius: 6px;
+  box-shadow: 1.5px 1px 3px #719ECE;
+}
+
+.login form input[type="submit"]:hover {
+  color: #1eb4af;
+  background-image: linear-gradient(90deg, rgba(187, 255, 239, 1), rgba(236, 237, 203, 1) 34%, rgba(248, 227, 183, 1) 72%, rgba(255, 221, 254, 1) 97%);
+  transition: background-image 0.2s;
+}
+
+.login form #button {
+  color: rgb(163, 165, 168);
+  text-align: center;
+  text-decoration: none;
+}
+
+.login form #button:hover {
+  color: rgba(247, 148, 238, 1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  background-color: transparent;
+  padding: 2vh;
+}
+
+.header .logo {
+  display: flex;
+  align-items: center;
+  color: var(--font-color);
+  font-weight: bold;
+  font-size: x-large;
+  margin-left: 10px;
+}
+
+.header .links {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3rem;
+}
+
+.header ul {
+  list-style-type: none;
+}
+
+.header a,
+a:visited {
+  text-decoration: none;
+  color: var(--font-color);
+}
+
+.header .github {
+  display: flex;
+}
+
+.header .text-logo {
+  width: 3.5rem;
+}
+
+.header .cat-logo {
+  width: 1.8rem;
+}
+
+.alert-fail {
+  background-color: rgb(247, 56, 56);
+  color: var(--font-color);
+  padding: 5px 10px;
+}
+
+#preloader {
+  display: none;
+  background: rgba(255, 255, 255, 0.5) url(bubu-spin.gif) no-repeat center;
+  height: 100vh;
+  width: 100%;
+  position: fixed;
+  z-index: 100;
+}

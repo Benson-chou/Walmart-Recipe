@@ -1,0 +1,82 @@
+<!-- DOCTYPE html -->
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,minimum-scale=1">
+		<title>Sign up</title>
+        <!-- the form awesome library is used to add icons to our form -->
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
+        <script src="https://kit.fontawesome.com/92bcc0a615.js" crossorigin="anonymous"></script>
+        <!-- include the stylesheet file -->
+        <link href="/signup.css" rel="stylesheet" type="text/css">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	</head>
+	<body>
+		<div id="preloader"></div>
+		<div class="header-container">
+			<div class="header">
+				<div class="logo">Loblaws Recipe</div>
+				<ul class="links">
+					<li><a href="../login/">Login</a></li>
+					<!-- <li><a href="../signup/">Sign up</a></li> -->
+					<li>
+						<div class="github">
+							<a href="https://github.com/Benson-chou/loblawRecipe" target="_blank">
+								<img class="cat-logo" src="/github-mark-white.png" alt="GitHub Cat Logo">
+								<img class="text-logo" src="/GitHub_Logo_White.png" alt="GitHub Text Logo">
+							</a>
+						</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+		
+		<div class="container">
+			<div class="image">
+				<img src="/groceries.jpg" alt="Groceries">
+			</div>
+
+			<div class="signup">
+				<h1>Signup</h1>
+				<form id="signupForm" action="/signup" method="post">
+					<label for="username">
+						<!-- font awesome icon -->
+						<i class="fas fa-user"></i>
+					</label>
+					<input type="text" name="username" placeholder="Username" id="username" required>
+					<label for="password">
+						<i class="fas fa-lock"></i>
+					</label>
+					<input type="password" name="password" placeholder="Password" id="password" required>
+							<label for="postal code">
+								<i class="fas fa-location-dot"></i>
+							</label>
+							<input type="text" name="postalCode" placeholder="Postal Code" id="postal code" 
+							pattern="^[A-CEGHJ-NPRSTVXYa-ceghj-nprstvxy]\d[A-CEGHJ-NPRSTV-Za-ceghj-nprstv-z]\s*\d[A-CEGHJ-NPRSTV-Za-ceghj-nprstv-z]\d$">
+							<label for="allergies">
+								<i class="fas fa-circle-exclamation"></i>
+							</label>
+							<input type="text" name="allergies" placeholder="Allergies: Nuts, dairy...etc." id="allergies" maxlength="50">
+					<% if(message.length > 0) {%>
+						<div class="alert-fail">
+							<div class="alert-text">
+								<%= message %>
+							</div>
+						</div>
+					<% } %>
+					<input type="submit" name="signup" value="Sign Up">
+					<a href="../home/" id="button" type="submit">Unsure about joining us yet? Try guest mode!</a>
+				</form>
+			</div>
+		</div>
+		<script>
+			$(document).ready(function() {
+				$("#signupForm").on("submit", function() {
+					$(".signup").fadeOut("slow", function() {
+						$("#preloader").fadeIn("slow", "swing");
+					})
+				})
+			})
+		</script>
+	</body>
+</html>
