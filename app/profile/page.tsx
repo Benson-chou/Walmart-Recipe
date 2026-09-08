@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { ProfileClient } from "@/components/ProfileClient";
+import { recommendForUser } from "@/lib/agents/recommend";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Recipe } from "@/lib/types";
@@ -22,7 +23,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, preferred_location, allergies")
+    .select("id, username, preferred_location, allergies, embedding")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -32,7 +33,7 @@ export default async function ProfilePage() {
 
   const { data: savedRows } = await supabase
     .from("saved")
-    .select("recipes ( recipe_name, ingredients, description )")
+    .select("recipe_id, recipes ( recipe_name, ingredients, description )")
     .eq("user_id", user.id);
 
   const recipes: Recipe[] = (savedRows || [])
@@ -47,6 +48,20 @@ export default async function ProfilePage() {
     })
     .filter(Boolean) as Recipe[];
 
+  let recommended: Recipe[] = [];
+  try {
+    recommended = await recommendForUser({
+      userEmbedding: Array.isArray(profile.embedding)
+        ? (profile.embedding as number[])
+        : null,
+      allergies: profile.allergies,
+      excludeIds: (savedRows ?? []).map((row) => row.recipe_id).filter(Boolean),
+      limit: 6,
+    });
+  } catch (error) {
+    console.error("profile recommendations failed:", error);
+  }
+
   return (
     <ProfileClient
       profile={{
@@ -56,6 +71,7 @@ export default async function ProfilePage() {
         allergies: profile.allergies,
       }}
       recipes={recipes}
+      recommended={recommended}
     />
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { ensureIngredientQuantities } from "@/lib/ingredients";
 import type { Recipe } from "@/lib/types";
 
 type RecipeCardProps = {
@@ -23,6 +24,11 @@ export function RecipeCard({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const ingredients = useMemo(
+    () => ensureIngredientQuantities(recipe.Ingredients),
+    [recipe.Ingredients]
+  );
+
   async function toggleSave() {
     if (!loggedIn) {
       setMessage("Log in to save recipes.");
@@ -37,7 +43,7 @@ export function RecipeCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           recipe_name: recipe.Recipe_name,
-          recipe_ingredients: recipe.Ingredients,
+          recipe_ingredients: ingredients,
           recipe_description: recipe.Instructions,
           username,
         }),
@@ -57,10 +63,28 @@ export function RecipeCard({
     }
   }
 
+  const sourceLabel =
+    recipe.source === "generated"
+      ? "Fresh · AI"
+      : recipe.source === "retrieved"
+        ? "From catalog"
+        : null;
+
   return (
-    <article className={`recipe-card ${expanded ? "expanded" : ""}`}>
+    <article
+      className={`recipe-card ${expanded ? "expanded" : ""} ${
+        recipe.source ? `source-${recipe.source}` : ""
+      }`}
+    >
       <div className="recipe-top">
-        <h3>{recipe.Recipe_name}</h3>
+        <div className="recipe-title-block">
+          {sourceLabel ? (
+            <span className={`source-badge source-badge-${recipe.source}`}>
+              {sourceLabel}
+            </span>
+          ) : null}
+          <h3>{recipe.Recipe_name}</h3>
+        </div>
         <div className="recipe-actions">
           <button
             type="button"
@@ -88,7 +112,7 @@ export function RecipeCard({
         <div className="recipe-body">
           <div>
             <h4>Ingredients</h4>
-            <pre>{recipe.Ingredients}</pre>
+            <pre>{ingredients}</pre>
           </div>
           <div>
             <h4>Instructions</h4>
@@ -97,7 +121,7 @@ export function RecipeCard({
         </div>
       ) : (
         <p className="recipe-preview">
-          {recipe.Ingredients.split("\n").slice(0, 3).join(" · ")}
+          {ingredients.split("\n").slice(0, 3).join(" · ")}
         </p>
       )}
     </article>

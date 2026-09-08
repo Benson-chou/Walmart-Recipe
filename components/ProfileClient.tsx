@@ -7,15 +7,22 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { RecipeCard } from "@/components/RecipeCard";
 import type { Profile, Recipe } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
+import { APP_NAME } from "@/lib/brand";
 import { formatAllergies, parseAllergies } from "@/lib/allergies";
 import { isSupabaseConfigured } from "@/lib/env";
+import { cleanZipCode } from "@/lib/location";
 
 type ProfileClientProps = {
   profile: Profile;
   recipes: Recipe[];
+  recommended?: Recipe[];
 };
 
-export function ProfileClient({ profile, recipes: initialRecipes }: ProfileClientProps) {
+export function ProfileClient({
+  profile,
+  recipes: initialRecipes,
+  recommended = [],
+}: ProfileClientProps) {
   const router = useRouter();
   const [location, setLocation] = useState(profile.preferred_location);
   const [allergies, setAllergies] = useState(() => parseAllergies(profile.allergies));
@@ -34,7 +41,7 @@ export function ProfileClient({ profile, recipes: initialRecipes }: ProfileClien
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          preferred_location: location.toLowerCase().replace(/\s+/g, ""),
+          preferred_location: cleanZipCode(location),
           allergies: formatAllergies(allergies),
         }),
       });
@@ -67,7 +74,7 @@ export function ProfileClient({ profile, recipes: initialRecipes }: ProfileClien
 
       <main className="profile-main">
         <section className="hero compact-hero">
-          <p className="brand-mark">Loblaws Recipe</p>
+          <p className="brand-mark">{APP_NAME}</p>
           <h1>{profile.username}</h1>
           <p className="lede">Update your kitchen prefs and browse saved recipes.</p>
         </section>
@@ -75,7 +82,7 @@ export function ProfileClient({ profile, recipes: initialRecipes }: ProfileClien
         <section className="profile-panel">
           <form className="profile-form" onSubmit={onSave}>
             <label className="field">
-              <span>Preferred postal code</span>
+              <span>Preferred ZIP code</span>
               <input
                 type="text"
                 value={location}
@@ -125,6 +132,31 @@ export function ProfileClient({ profile, recipes: initialRecipes }: ProfileClien
                       );
                     }
                   }}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="recipes-section">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">For you</p>
+              <h2>You may also like</h2>
+            </div>
+          </div>
+          {recommended.length === 0 ? (
+            <p className="empty-state">
+              Recommendations appear after the recipe catalog is seeded and you save a few dishes.
+            </p>
+          ) : (
+            <div className="recipe-list">
+              {recommended.map((recipe) => (
+                <RecipeCard
+                  key={`rec-${recipe.Recipe_name}`}
+                  recipe={recipe}
+                  loggedIn
+                  username={profile.username}
                 />
               ))}
             </div>

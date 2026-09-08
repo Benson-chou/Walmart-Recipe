@@ -1,0 +1,182 @@
+[
+  {
+    "recipe_name": "Lemon Garlic Salmon Sheet Pan",
+    "ingredients": "salmon fillets\nasparagus\nlemon\ngarlic\nolive oil\nsalt & pepper",
+    "description": "1. Heat oven to 400°F.\n2. Toss asparagus with oil, salt, and pepper on a sheet pan.\n3. Nestle salmon on the pan, top with garlic and lemon.\n4. Roast 12–15 minutes until salmon flakes.",
+    "tags": ["salmon", "asparagus", "lemon", "sheet-pan"]
+  },
+  {
+    "recipe_name": "One-Pan Chicken Broccoli Rice",
+    "ingredients": "chicken breast\nbroccoli\nrice\nchicken broth\ngarlic\nolive oil",
+    "description": "1. Brown chicken in a deep skillet.\n2. Add rice, garlic, and broth; bring to a simmer.\n3. Nestle broccoli on top, cover, and cook 15 minutes.\n4. Fluff rice and serve.",
+    "tags": ["chicken", "broccoli", "rice"]
+  },
+  {
+    "recipe_name": "Tomato Basil Beef Pasta",
+    "ingredients": "ground beef\npasta\ntomatoes\nonion\ngarlic\nbasil\nparmesan",
+    "description": "1. Boil pasta.\n2. Brown beef with onion and garlic.\n3. Stir in tomatoes and simmer 10 minutes.\n4. Toss with pasta, basil, and parmesan.",
+    "tags": ["beef", "pasta", "tomato"]
+  },
+  {
+    "recipe_name": "Crispy Tofu Spinach Stir-Fry",
+    "ingredients": "tofu\nspinach\nsoy sauce\ngarlic\nginger\nrice\nsesame oil",
+    "description": "1. Press and cube tofu; pan-fry until crisp.\n2. Add garlic and ginger.\n3. Wilt spinach and splash soy sauce.\n4. Serve over rice.",
+    "tags": ["tofu", "spinach", "soy"]
+  },
+  {
+    "recipe_name": "Cheddar Scramble Toast",
+    "ingredients": "eggs\ncheddar cheese\nbread\nbutter\nchives\nsalt & pepper",
+    "description": "1. Toast bread.\n2. Soft-scramble eggs in butter.\n3. Fold in cheddar and chives.\n4. Pile on toast and season.",
+    "tags": ["eggs", "cheddar", "bread"]
+  },
+  {
+    "recipe_name": "Garlic Butter Shrimp Rice Bowl",
+    "ingredients": "shrimp\nrice\ngarlic\nbutter\nlemon\nparsley",
+    "description": "1. Cook rice.\n2. Sauté shrimp in butter and garlic.\n3. Finish with lemon and parsley.\n4. Serve over rice.",
+    "tags": ["shrimp", "rice", "garlic"]
+  },
+  {
+    "recipe_name": "Apple Onion Pork Skillet",
+    "ingredients": "pork chops\napple\nonion\nmustard\nolive oil\nthyme",
+    "description": "1. Sear pork chops; set aside.\n2. Soften apple and onion in the pan.\n3. Stir in mustard and thyme.\n4. Return pork to glaze and finish cooking.",
+    "tags": ["pork", "apple", "onion"]
+  },
+  {
+    "recipe_name": "Chickpea Cucumber Yogurt Bowl",
+    "ingredients": "chickpeas\ncucumber\nyogurt\nlemon\nolive oil\ncumin",
+    "description": "1. Warm chickpeas with cumin and oil.\n2. Dice cucumber.\n3. Whisk yogurt with lemon.\n4. Assemble bowls and drizzle.",
+    "tags": ["chickpeas", "cucumber", "yogurt"]
+  },
+  {
+    "recipe_name": "Turkey Veggie Chili",
+    "ingredients": "ground turkey\nkidney beans\ntomatoes\nbell pepper\nonion\nchili powder",
+    "description": "1. Brown turkey with onion and pepper.\n2. Add tomatoes, beans, and chili powder.\n3. Simmer 20 minutes.\n4. Taste and adjust seasoning.",
+    "tags": ["turkey", "beans", "chili"]
+  },
+  {
+    "recipe_name": "Mushroom Barley Soup",
+    "ingredients": "mushrooms\nbarley\ncarrot\ncelery\nonion\nvegetable broth",
+    "description": "1. Sauté onion, carrot, celery, and mushrooms.\n2. Add barley and broth.\n3. Simmer until barley is tender.\n4. Season and serve hot.",
+    "tags": ["mushroom", "barley", "soup"]
+  },
+  {
+    "recipe_name": "Honey Mustard Chicken Thighs",
+    "ingredients": "chicken thighs\nhoney\nmustard\ngarlic\nolive oil\ngreen beans",
+    "description": "1. Mix honey, mustard, and garlic.\n2. Coat chicken and roast at 400°F for 25 minutes.\n3. Roast green beans alongside.\n4. Rest chicken briefly and plate.",
+    "tags": ["chicken", "honey", "green beans"]
+  },
+  {
+    "recipe_name": "Veggie Fried Rice",
+    "ingredients": "cooked rice\neggs\npeas\ncarrot\nsoy sauce\ngreen onion",
+    "description": "1. Scramble eggs; set aside.\n2. Stir-fry carrot and peas.\n3. Add rice and soy sauce.\n4. Fold in eggs and green onion.",
+    "tags": ["rice", "eggs", "peas"]
+  },
+  {
+    "recipe_name": "Black Bean Quesadillas",
+    "ingredients": "black beans\ntortillas\ncheddar cheese\nsalsa\navocado\ncumin",
+    "description": "1. Mash beans with cumin.\n2. Fill tortillas with beans and cheese.\n3. Toast until crisp and melted.\n4. Serve with salsa and avocado.",
+    "tags": ["beans", "cheese", "tortilla"]
+  },
+  {
+    "recipe_name": "Baked Cod with Tomatoes",
+    "ingredients": "cod\ncherry tomatoes\nolive oil\ngarlic\nparsley\nlemon",
+    "description": "1. Place cod in a baking dish.\n2. Top with tomatoes, garlic, and oil.\n3. Bake at 400°F for 12–15 minutes.\n4. Finish with parsley and lemon.",
+    "tags": ["cod", "tomato", "lemon"]
+  },
+  {
+    "recipe_name": "Sweet Potato Black Bean Tacos",
+    "ingredients": "sweet potato\nblack beans\ntortillas\ncumin\nlime\ncabbage",
+    "description": "1. Roast cubed sweet potato with cumin.\n2. Warm black beans.\n3. Fill tortillas with potato and beans.\n4. Top with cabbage and lime.",
+    "tags": ["sweet potato", "beans", "tacos"]
+  },
+  {
+    "recipe_name": "Sausage Pepper Skillet",
+    "ingredients": "sausage\nbell peppers\nonion\nolive oil\nitalian seasoning\nbread",
+    "description": "1. Brown sausage slices.\n2. Add peppers and onion.\n3. Season and cook until tender.\n4. Serve with toasted bread.",
+    "tags": ["sausage", "peppers", "onion"]
+  },
+  {
+    "recipe_name": "Greek Lemon Potato Chicken",
+    "ingredients": "chicken drumsticks\npotatoes\nlemon\noregano\nolive oil\ngarlic",
+    "description": "1. Toss chicken and potatoes with oil, lemon, oregano, garlic.\n2. Roast at 425°F for 40 minutes.\n3. Flip once for even browning.\n4. Rest and serve.",
+    "tags": ["chicken", "potato", "lemon"]
+  },
+  {
+    "recipe_name": "Peanutty Noodle Salad",
+    "ingredients": "noodles\npeanut butter\nsoy sauce\ncucumber\ncarrot\nlime",
+    "description": "1. Cook and cool noodles.\n2. Whisk peanut butter, soy, and lime.\n3. Toss with noodles and shredded veg.\n4. Chill briefly before serving.",
+    "tags": ["noodles", "peanut", "cucumber"]
+  },
+  {
+    "recipe_name": "White Bean Kale Stew",
+    "ingredients": "white beans\nkale\nonion\ngarlic\nvegetable broth\nolive oil",
+    "description": "1. Sauté onion and garlic.\n2. Add beans and broth; simmer.\n3. Stir in kale until wilted.\n4. Season and ladle into bowls.",
+    "tags": ["beans", "kale", "stew"]
+  },
+  {
+    "recipe_name": "BBQ Chicken Flatbread",
+    "ingredients": "chicken breast\nflatbread\nbbq sauce\nred onion\nmozzarella\ncilantro",
+    "description": "1. Toss cooked chicken with BBQ sauce.\n2. Top flatbread with cheese, chicken, onion.\n3. Bake until bubbly.\n4. Finish with cilantro.",
+    "tags": ["chicken", "flatbread", "bbq"]
+  },
+  {
+    "recipe_name": "Sesame Beef Broccoli",
+    "ingredients": "beef strips\nbroccoli\nsoy sauce\nsesame oil\ngarlic\nrice",
+    "description": "1. Stir-fry beef quickly; set aside.\n2. Cook broccoli until bright green.\n3. Return beef with soy, garlic, sesame.\n4. Serve over rice.",
+    "tags": ["beef", "broccoli", "sesame"]
+  },
+  {
+    "recipe_name": "Roasted Cauliflower Grain Bowl",
+    "ingredients": "cauliflower\nquinoa\nchickpeas\ntahini\nlemon\nolive oil",
+    "description": "1. Roast cauliflower and chickpeas.\n2. Cook quinoa.\n3. Whisk tahini with lemon.\n4. Assemble bowls and drizzle dressing.",
+    "tags": ["cauliflower", "quinoa", "chickpeas"]
+  },
+  {
+    "recipe_name": "Spinach Mushroom Omelette",
+    "ingredients": "eggs\nspinach\nmushrooms\nbutter\ncheese\nsalt & pepper",
+    "description": "1. Sauté mushrooms and spinach.\n2. Pour beaten eggs into the pan.\n3. Add filling and cheese; fold.\n4. Slide onto a plate.",
+    "tags": ["eggs", "spinach", "mushroom"]
+  },
+  {
+    "recipe_name": "Lentil Carrot Curry",
+    "ingredients": "red lentils\ncarrot\nonion\ncurry powder\ncoconut milk\nrice",
+    "description": "1. Soften onion and carrot.\n2. Add lentils, curry, and coconut milk.\n3. Simmer until thick and tender.\n4. Serve with rice.",
+    "tags": ["lentils", "carrot", "curry"]
+  },
+  {
+    "recipe_name": "Caprese Chicken Bake",
+    "ingredients": "chicken breast\ntomatoes\nmozzarella\nbasil\nbalsamic\nolive oil",
+    "description": "1. Season chicken and bake at 400°F for 15 minutes.\n2. Top with tomato and mozzarella.\n3. Bake until cheese melts.\n4. Finish with basil and balsamic.",
+    "tags": ["chicken", "tomato", "mozzarella"]
+  },
+  {
+    "recipe_name": "Zucchini Corn Fritters",
+    "ingredients": "zucchini\ncorn\neggs\nflour\ngreen onion\nyogurt",
+    "description": "1. Mix grated zucchini, corn, egg, flour, onion.\n2. Pan-fry spoonfuls until golden.\n3. Drain on paper towel.\n4. Serve with yogurt dip.",
+    "tags": ["zucchini", "corn", "eggs"]
+  },
+  {
+    "recipe_name": "Maple Dijon Salmon",
+    "ingredients": "salmon\nmaple syrup\ndijon\ngarlic\nbroccoli\nolive oil",
+    "description": "1. Whisk maple, dijon, and garlic.\n2. Brush on salmon.\n3. Roast with broccoli at 400°F.\n4. Serve when salmon is just cooked.",
+    "tags": ["salmon", "maple", "broccoli"]
+  },
+  {
+    "recipe_name": "Beef Soft Tacos",
+    "ingredients": "ground beef\ntortillas\nlettuce\ntomato\ncheddar\ncumin",
+    "description": "1. Brown beef with cumin.\n2. Warm tortillas.\n3. Fill with beef and toppings.\n4. Serve immediately.",
+    "tags": ["beef", "tacos", "lettuce"]
+  },
+  {
+    "recipe_name": "Tomato White Bean Pasta",
+    "ingredients": "pasta\nwhite beans\ncherry tomatoes\ngarlic\nolive oil\nspinach",
+    "description": "1. Cook pasta.\n2. Sauté garlic and tomatoes.\n3. Add beans and spinach.\n4. Toss with pasta and oil.",
+    "tags": ["pasta", "beans", "tomato"]
+  },
+  {
+    "recipe_name": "Herb Roast Chicken Legs",
+    "ingredients": "chicken legs\npotatoes\ncarrot\nrosemary\nolive oil\ngarlic",
+    "description": "1. Toss chicken and veg with oil, garlic, rosemary.\n2. Roast at 425°F for 45 minutes.\n3. Rest 5 minutes.\n4. Plate with pan juices.",
+    "tags": ["chicken", "potato", "carrot"]
+  }
+]

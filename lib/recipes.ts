@@ -1,4 +1,13 @@
 import type { Recipe } from "@/lib/types";
+import { filterItemsByAllergies, recipeConflictsWithAllergies } from "@/lib/allergens";
+import {
+  INGREDIENT_QUANTITY_RULES,
+  QUANTIFIED_PANTRY_LINES,
+  ensureRecipeQuantities,
+  ingredientsHaveQuantities,
+  quantifyFlyerItem,
+} from "@/lib/ingredients";
+import { getCookingTier } from "@/lib/cooking-tier";
 
 const BASES = [
   {
@@ -15,21 +24,13 @@ const BASES = [
   },
 ];
 
-function pickExtras(creativity: number): string[] {
-  const extras = [
-    "olive oil",
-    "garlic",
-    "onion",
-    "salt & pepper",
-    "lemon juice",
-    "fresh herbs",
-    "soy sauce",
-    "chili flakes",
-    "butter",
-    "stock or broth",
-  ];
-  const count = Math.min(extras.length, 3 + Math.floor(creativity / 3));
-  return extras.slice(0, count);
+function pickExtras(creativity?: number | string): string[] {
+  const score =
+    typeof creativity === "number"
+      ? creativity
+      : getCookingTier(creativity).creativityScore;
+  const count = Math.min(QUANTIFIED_PANTRY_LINES.length, 3 + Math.floor(score / 3));
+  return QUANTIFIED_PANTRY_LINES.slice(0, count);
 }
 
 function buildInstructions(method: string, items: string[]): string {
@@ -62,56 +63,63 @@ export function generateMockRecipes(input: {
   items: string[];
   budget: number;
   allergies: string;
-  creativity: number;
+  creativity?: number | string;
+  styleRequest?: string;
 }): Recipe[] {
-  const items = input.items.length ? input.items : ["seasonal vegetables"];
-  const count = Math.min(3, Math.max(1, 1 + Math.floor(input.creativity / 5)));
-  const allergyNote =
-    input.allergies && input.allergies.toLowerCase() !== "none"
-      ? `\n(Avoid: ${input.allergies})`
-      : "";
+  const tier = getCookingTier(input.creativity);
+  const items = filterItemsByAllergies(
+    input.items.length ? input.items : ["seasonal vegetables"],
+    input.allergies
+  );
+  const usableItems = items.length ? items : ["seasonal vegetables"];
+  const count = Math.min(3, Math.max(1, 1 + Math.floor(tier.creativityScore / 5)));
 
   return BASES.slice(0, count).map((base, index) => {
-    const rotated = [...items.slice(index), ...items.slice(0, index)];
-    const extras = pickExtras(input.creativity + index);
+    const rotated = [...usableItems.slice(index), ...usableItems.slice(0, index)];
+    const extras = pickExtras(tier.creativityScore + index);
     const ingredients = [
-      ...rotated.map((item) => item),
+      ...rotated.map((item) => quantifyFlyerItem(item)),
       ...extras,
-      `Stay near CAD $${input.budget.toFixed(2)} total`,
     ].join("\n");
 
-    return {
+    return ensureRecipeQuantities({
       Recipe_name: base.name(rotated),
-      Ingredients: ingredients + allergyNote,
+      Ingredients: ingredients,
       Instructions: buildInstructions(base.method, rotated),
-    };
-  });
+    });
+  }).filter((recipe) => !recipeConflictsWithAllergies(recipe, input.allergies));
 }
 
 export async function generateRecipes(input: {
   items: string[];
   budget: number;
   allergies: string;
-  creativity: number;
+  creativity?: number | string;
 }): Promise<Recipe[]> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
     return generateMockRecipes(input);
   }
 
+  const tier = getCookingTier(input.creativity);
+
   try {
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
     const googleAI = new GoogleGenerativeAI(key);
+    const { GEMINI_CHAT_MODEL } = await import("@/lib/gemini");
     const model = googleAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: GEMINI_CHAT_MODEL,
       generationConfig: {
-        temperature: input.creativity / 10,
+        temperature: tier.temperature,
         maxOutputTokens: 4096,
       },
     });
 
-    const prompt = `Recommend 1-3 recipes using ${input.items.join(", ")} with a budget of ${input.budget} CAD and avoid these allergies: ${input.allergies}.
+    const prompt = `Recommend 1-3 recipes using ${input.items.join(", ")} with a budget of ${input.budget} USD and avoid these allergies: ${input.allergies}.
+Cooking vibe: ${tier.label} (${tier.subtitle}).
+${tier.promptGuidance}
 You do not have to include every ingredient in every recipe.
+${INGREDIENT_QUANTITY_RULES}
 Label each instruction step with 1., 2., 3., etc.
 Output ONLY JSON array of objects with keys Recipe_name, Ingredients, Instructions.
 Ingredients and Instructions should each be one long string with items/steps separated by newline characters.`;
@@ -123,7 +131,10 @@ Ingredients and Instructions should each be one long string with items/steps sep
     if (!Array.isArray(recipes) || recipes.length === 0) {
       return generateMockRecipes(input);
     }
-    return recipes;
+    const withQuantities = recipes
+      .filter((r) => r.Recipe_name && r.Ingredients && r.Instructions)
+      .map(ensureRecipeQuantities);
+    return withQuantities.length ? withQuantities : generateMockRecipes(input);
   } catch {
     return generateMockRecipes(input);
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { refreshUserEmbedding } from "@/lib/user-vector";
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
@@ -48,7 +49,13 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (!stillSaved || stillSaved.length === 0) {
-      await supabase.from("recipes").delete().eq("id", recipe.id);
+      // keep corpus recipes; only delete user-sourced orphans optionally — skip delete for catalog
+    }
+
+    try {
+      await refreshUserEmbedding(user.id);
+    } catch (error) {
+      console.error("refreshUserEmbedding failed:", error);
     }
 
     return NextResponse.json({ message: "Recipe deleted successfully" });

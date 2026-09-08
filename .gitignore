@@ -42,6 +42,10 @@ supabase/.temp
 .claude/
 skills-lock.json
 
+# large local datasets
+data/*.parquet
+data/RAW_recipes.csv
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

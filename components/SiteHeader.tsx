@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { APP_NAME } from "@/lib/brand";
 import { isSupabaseConfigured } from "@/lib/env";
 
 type SiteHeaderProps = {
@@ -26,7 +27,7 @@ export function SiteHeader({ username, loggedIn }: SiteHeaderProps) {
   return (
     <header className="site-header">
       <Link href="/home" className="brand">
-        Loblaws Recipe
+        {APP_NAME}
       </Link>
       <nav className="nav-links">
         {loggedIn ? (
@@ -54,7 +55,7 @@ export function SiteHeader({ username, loggedIn }: SiteHeaderProps) {
           </>
         )}
         <a
-          href="https://github.com/Benson-chou/loblawRecipe"
+          href="https://github.com/Benson-chou/Walmart-Recipe"
           target="_blank"
           rel="noreferrer"
           className="github-link"

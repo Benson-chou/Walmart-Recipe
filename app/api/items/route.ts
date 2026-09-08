@@ -1,28 +1,26 @@
 import { NextResponse } from "next/server";
+import { getCachedOrFreshItems } from "@/lib/flyer-scrape";
 import { getLocalFlyerItems } from "@/lib/flyer";
 import { isSupabaseConfigured } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { cleanZipCode } from "@/lib/location";
 
-export async function GET() {
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("items")
-      .select("id, item_name, price, image, sale_story")
-      .order("item_name");
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const postal = cleanZipCode(searchParams.get("postal") || searchParams.get("zip") || "");
+  const forceRefresh = searchParams.get("refresh") === "1";
 
-    if (!error && data && data.length > 0) {
-      return NextResponse.json({
-        items: data.map((row) => ({
-          id: row.id,
-          item_name: row.item_name,
-          price: Number(row.price),
-          image: row.image,
-          sale_story: row.sale_story,
-        })),
-      });
-    }
+  if (!isSupabaseConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ items: getLocalFlyerItems(), source: "seed", refreshed: false });
   }
 
-  return NextResponse.json({ items: getLocalFlyerItems() });
+  try {
+    const result = await getCachedOrFreshItems({
+      postalCode: postal,
+      forceRefresh,
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ items: getLocalFlyerItems(), source: "seed", refreshed: false });
+  }
 }

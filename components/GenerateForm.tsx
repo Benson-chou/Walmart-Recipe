@@ -1,30 +1,35 @@
 "use client";
 
 import { AllergyMultiSelect } from "@/components/AllergyMultiSelect";
+import { COOKING_TIERS, type CookingTierId } from "@/lib/cooking-tier";
 
 type GenerateFormProps = {
-  creativity: number;
+  tier: CookingTierId;
   budget: string;
   allergies: string[];
+  styleRequest: string;
   location: string;
   error?: string | null;
   loading?: boolean;
-  onCreativityChange: (value: number) => void;
+  onTierChange: (value: CookingTierId) => void;
   onBudgetChange: (value: string) => void;
   onAllergiesChange: (value: string[]) => void;
+  onStyleRequestChange: (value: string) => void;
   onSubmit: () => void;
 };
 
 export function GenerateForm({
-  creativity,
+  tier,
   budget,
   allergies,
+  styleRequest,
   location,
   error,
   loading,
-  onCreativityChange,
+  onTierChange,
   onBudgetChange,
   onAllergiesChange,
+  onStyleRequestChange,
   onSubmit,
 }: GenerateFormProps) {
   return (
@@ -34,26 +39,46 @@ export function GenerateForm({
           <p className="eyebrow">Customize</p>
           <h2>Help the kitchen know you</h2>
         </div>
-        <p className="location-chip">Postal: {location}</p>
+        <p className="location-chip">ZIP: {location}</p>
       </div>
 
       <div className="generate-grid">
-        <label className="field">
-          <span>Creativity</span>
-          <div className="slider-row">
-            <input
-              type="range"
-              min={0}
-              max={10}
-              value={creativity}
-              onChange={(e) => onCreativityChange(Number(e.target.value))}
-            />
-            <output>{creativity}</output>
+        <div className="field field-wide">
+          <span id="tier-group-label">Cooking vibe</span>
+          <div
+            className="tier-grid"
+            role="radiogroup"
+            aria-labelledby="tier-group-label"
+          >
+            {COOKING_TIERS.map((item) => {
+              const isSelected = tier === item.id;
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  role="radio"
+                  aria-checked={isSelected}
+                  className={`tier-card ${isSelected ? "selected" : ""}`}
+                  onClick={() => onTierChange(item.id)}
+                >
+                  <div className="tier-card-top">
+                    <span className="tier-icon">{item.icon}</span>
+                    <span className="tier-radio-indicator">
+                      <span className="tier-radio-dot" />
+                    </span>
+                  </div>
+                  <div className="tier-card-body">
+                    <p className="tier-title">{item.label}</p>
+                    <p className="tier-subtitle">{item.subtitle}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        </label>
+        </div>
 
         <label className="field">
-          <span>Budget (CAD)</span>
+          <span>Budget (USD)</span>
           <input
             type="number"
             min={0}
@@ -68,6 +93,20 @@ export function GenerateForm({
           <span>Allergies</span>
           <AllergyMultiSelect value={allergies} onChange={onAllergiesChange} />
         </div>
+
+        <label className="field field-wide">
+          <span>Other requests</span>
+          <textarea
+            value={styleRequest}
+            onChange={(e) => onStyleRequestChange(e.target.value)}
+            placeholder="e.g. healthy & light, one-pan, oven bake, high protein, under 30 minutes…"
+            rows={3}
+            maxLength={400}
+          />
+          <span className="field-hint">
+            Optional cooking style — healthy vs heavy, oven vs skillet, spice level, etc.
+          </span>
+        </label>
       </div>
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -78,7 +117,7 @@ export function GenerateForm({
         onClick={onSubmit}
         disabled={loading}
       >
-        {loading ? "Generating…" : "Generate recipes"}
+        {loading ? "Cooking up ideas…" : "Generate recipes"}
       </button>
     </section>
   );

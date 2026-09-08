@@ -6,24 +6,34 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "tsx --env-file=.env.local scripts/seed-recipes.ts",
+    "db:seed:foodcom": "tsx --env-file=.env.local scripts/seed-recipes.ts --parquet data/recipes.parquet --limit 2000",
+    "db:seed:foodcom:csv": "tsx --env-file=.env.local scripts/seed-recipes.ts --csv data/RAW_recipes.csv --limit 2000",
+    "db:backfill:categories": "tsx --env-file=.env.local scripts/backfill-categories.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "hyparquet": "^1.29.2",
+    "hyparquet-compressors": "^1.1.1",
     "next": "16.3.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "^8.18.1",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

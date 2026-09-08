@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -13,8 +14,8 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Loblaws Recipe",
-  description: "Cook from this week's Loblaws discounts",
+  title: APP_NAME,
+  description: APP_TAGLINE,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

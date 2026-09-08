@@ -1,4 +1,5 @@
 import flyerJson from "@/data/flyer-items.json";
+import { categorizeGroceryItem } from "@/lib/grocery-categories";
 import type { FlyerItem } from "@/lib/types";
 
 export function getLocalFlyerItems(): FlyerItem[] {
@@ -8,5 +9,6 @@ export function getLocalFlyerItems(): FlyerItem[] {
     price: item.price,
     image: item.image,
     sale_story: item.sale_story,
+    category: categorizeGroceryItem(item.item_name),
   }));
 }

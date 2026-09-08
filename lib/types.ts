@@ -4,13 +4,18 @@ export type FlyerItem = {
   price: number;
   image: string;
   sale_story: string;
+  category?: string;
 };
+
+export type RecipeSource = "retrieved" | "generated";
 
 export type Recipe = {
   id?: string;
   Recipe_name: string;
   Ingredients: string;
   Instructions: string;
+  source?: RecipeSource;
+  score?: number;
 };
 
 export type Profile = {

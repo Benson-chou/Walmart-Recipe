@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { embedText, recipeToEmbedText } from "@/lib/embeddings";
+import { extractAllergensFromText } from "@/lib/allergens";
+import { refreshUserEmbedding } from "@/lib/user-vector";
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
@@ -36,12 +39,26 @@ export async function POST(request: Request) {
     let recipeId = existing?.id;
 
     if (!recipeId) {
+      const embedding = await embedText(
+        recipeToEmbedText({
+          recipe_name,
+          ingredients: recipe_ingredients,
+          description: recipe_description,
+        })
+      );
+      const allergens = extractAllergensFromText(
+        `${recipe_ingredients}\n${recipe_description}`
+      );
+
       const { data: created, error: createError } = await supabase
         .from("recipes")
         .insert({
           recipe_name,
           ingredients: recipe_ingredients,
           description: recipe_description,
+          source: "user",
+          allergens,
+          embedding,
         })
         .select("id")
         .single();
@@ -59,6 +76,12 @@ export async function POST(request: Request) {
 
     if (saveError) {
       return NextResponse.json({ message: "Failed to bookmark recipe" }, { status: 500 });
+    }
+
+    try {
+      await refreshUserEmbedding(user.id);
+    } catch (error) {
+      console.error("refreshUserEmbedding failed:", error);
     }
 
     return NextResponse.json({ message: "Recipe saved successfully" });

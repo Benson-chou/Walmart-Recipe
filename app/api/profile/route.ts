@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/env";
+import { cleanZipCode } from "@/lib/location";
 import { createClient } from "@/lib/supabase/server";
+import { refreshUserEmbedding } from "@/lib/user-vector";
 
 export async function GET() {
   if (!isSupabaseConfigured()) {
@@ -38,7 +40,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const preferred_location =
       typeof body.preferred_location === "string"
-        ? body.preferred_location.toLowerCase().replace(/\s+/g, "")
+        ? cleanZipCode(body.preferred_location)
         : undefined;
     const allergies =
       typeof body.allergies === "string" ? body.allergies : undefined;
@@ -64,6 +66,12 @@ export async function PATCH(request: Request) {
 
     if (error) {
       return NextResponse.json({ message: "Failed to update profile" }, { status: 500 });
+    }
+
+    try {
+      await refreshUserEmbedding(user.id);
+    } catch (err) {
+      console.error("refreshUserEmbedding failed:", err);
     }
 
     return NextResponse.json({ profile: data });

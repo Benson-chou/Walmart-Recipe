@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
+import { APP_NAME } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/env";
 
@@ -51,7 +52,7 @@ export function LoginForm() {
       <SiteHeader />
       <main className="auth-main">
         <form className="auth-form" onSubmit={onSubmit}>
-          <p className="brand-mark">Loblaws Recipe</p>
+          <p className="brand-mark">{APP_NAME}</p>
           <h1>Welcome back</h1>
           <p className="lede">Sign in to save recipes and sync your preferences.</p>
 

@@ -6,18 +6,17 @@ import { useRouter } from "next/navigation";
 import { AllergyMultiSelect } from "@/components/AllergyMultiSelect";
 import { SiteHeader } from "@/components/SiteHeader";
 import { createClient } from "@/lib/supabase/client";
+import { APP_NAME } from "@/lib/brand";
 import { formatAllergies } from "@/lib/allergies";
 import { isSupabaseConfigured } from "@/lib/env";
-
-const POSTAL_PATTERN =
-  /^[A-CEGHJ-NPRSTVXY]\d[A-CEGHJ-NPRSTV-Z]\s?\d[A-CEGHJ-NPRSTV-Z]\d$/i;
+import { cleanZipCode, DEFAULT_ZIP, isValidUsZip } from "@/lib/location";
 
 export function SignupForm() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [postalCode, setPostalCode] = useState("");
+  const [zipCode, setZipCode] = useState("");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,9 +32,9 @@ export function SignupForm() {
       return;
     }
 
-    const cleanPostal = postalCode.toLowerCase().replace(/\s+/g, "");
-    if (postalCode && !POSTAL_PATTERN.test(postalCode)) {
-      setError("Enter a valid Canadian postal code.");
+    const cleanZip = cleanZipCode(zipCode);
+    if (zipCode && !isValidUsZip(zipCode)) {
+      setError("Enter a valid US ZIP code (e.g. 90210).");
       return;
     }
 
@@ -50,7 +49,7 @@ export function SignupForm() {
         options: {
           data: {
             username,
-            preferred_location: cleanPostal || "m5b1r7",
+            preferred_location: cleanZip,
             allergies: allergiesValue,
           },
         },
@@ -65,7 +64,7 @@ export function SignupForm() {
         await supabase.from("profiles").upsert({
           id: data.user.id,
           username,
-          preferred_location: cleanPostal || "m5b1r7",
+          preferred_location: cleanZip,
           allergies: allergiesValue,
         });
       }
@@ -89,9 +88,9 @@ export function SignupForm() {
           <img src="/images/groceries.jpg" alt="" />
         </div>
         <form className="auth-form" onSubmit={onSubmit}>
-          <p className="brand-mark">Loblaws Recipe</p>
+          <p className="brand-mark">{APP_NAME}</p>
           <h1>Join the kitchen</h1>
-          <p className="lede">Save recipes and personalize deals to your postal code.</p>
+          <p className="lede">Save recipes and personalize Walmart weekly ad deals to your ZIP code.</p>
 
           <label className="field">
             <span>Username</span>
@@ -128,12 +127,13 @@ export function SignupForm() {
           </label>
 
           <label className="field">
-            <span>Postal code</span>
+            <span>ZIP code</span>
             <input
               type="text"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              placeholder="M5B 1R7"
+              value={zipCode}
+              onChange={(e) => setZipCode(e.target.value)}
+              placeholder="90210"
+              inputMode="numeric"
             />
           </label>
 
