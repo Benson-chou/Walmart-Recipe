@@ -1,7 +1,8 @@
 export const GEMINI_FALLBACK_CHAT_MODELS = [
-  process.env.GEMINI_CHAT_MODEL || "gemini-3.7-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-3.8-flash",
+  process.env.GEMINI_CHAT_MODEL || "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.7-flash",
 ];
 
 export const GEMINI_CHAT_MODEL = GEMINI_FALLBACK_CHAT_MODELS[0];

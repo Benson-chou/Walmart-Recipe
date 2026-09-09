@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { ItemGrid } from "@/components/ItemGrid";
 import { GenerateForm } from "@/components/GenerateForm";
 import { RecipeCard } from "@/components/RecipeCard";
+import { CookingAnimation } from "@/components/CookingAnimation";
 import { APP_NAME } from "@/lib/brand";
 import { formatAllergies, parseAllergies } from "@/lib/allergies";
 import { filterItemsByAllergies } from "@/lib/allergens";
@@ -166,7 +167,14 @@ export function HomeClient({
           onSubmit={handleGenerate}
         />
 
-        {(allergySkipped.length > 0 || Boolean(systemNotice)) && (
+        {pending && (
+          <CookingAnimation
+            tier={tier}
+            selectedItems={selectedList}
+          />
+        )}
+
+        {!pending && (allergySkipped.length > 0 || Boolean(systemNotice)) && (
           <div className="notices-container" aria-live="polite">
             {systemNotice ? (
               <div className="notice-card notice-card-system" role="status">
@@ -243,15 +251,12 @@ export function HomeClient({
           </div>
         )}
 
-        {recipes.length > 0 ? (
+        {!pending && recipes.length > 0 ? (
           <section className="recipes-section">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Your menu</p>
                 <h2>Recommended recipes</h2>
-                <p className="lede-tight">
-                  Agentic RAG: 2 Food.com catalog matches plus 1 freshly invented recipe grounded in those methods.
-                </p>
               </div>
             </div>
             <div className="recipe-list">

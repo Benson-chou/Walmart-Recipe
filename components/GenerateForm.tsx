@@ -117,7 +117,14 @@ export function GenerateForm({
         onClick={onSubmit}
         disabled={loading}
       >
-        {loading ? "Cooking up ideas…" : "Generate recipes"}
+        {loading ? (
+          <span className="button-cooking-wrap">
+            <span className="button-spinner" aria-hidden />
+            <span>Simmering & generating…</span>
+          </span>
+        ) : (
+          "Generate recipes"
+        )}
       </button>
     </section>
   );

@@ -22,3 +22,24 @@ export function cleanZipCode(zip: string): string {
 export function isValidUsZip(zip: string): boolean {
   return US_ZIP_PATTERN.test(cleanZipCode(zip));
 }
+
+/**
+ * Returns adjacent numerical ZIP codes in the same postal district/area.
+ * Useful for finding regional store flyers when a local ZIP has sparse deals.
+ */
+export function getNearbyZipCodes(zip: string, count = 3): string[] {
+  const clean = cleanZipCode(zip).slice(0, 5);
+  const num = parseInt(clean, 10);
+  if (Number.isNaN(num)) return [];
+
+  const nearby: string[] = [];
+  const offsets = [1, -1, 2, -2, 3, -3, 4, -4];
+  for (const off of offsets) {
+    if (nearby.length >= count) break;
+    const candidate = num + off;
+    if (candidate >= 501 && candidate <= 99950) {
+      nearby.push(String(candidate).padStart(5, "0"));
+    }
+  }
+  return nearby;
+}

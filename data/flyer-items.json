@@ -3,31 +3,31 @@
     "item_name": "Organic Bananas",
     "price": 1.99,
     "image": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200&h=200&fit=crop",
-    "sale_story": "Save $1 when you buy 2 bunches"
+    "sale_story": "Great Value everyday deal"
   },
   {
     "item_name": "Chicken Breast",
     "price": 8.99,
     "image": "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=200&h=200&fit=crop",
-    "sale_story": "$2 off / lb this week"
+    "sale_story": "Rollback family pack"
   },
   {
     "item_name": "Roma Tomatoes",
     "price": 2.49,
     "image": "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=200&h=200&fit=crop",
-    "sale_story": "In-store special"
+    "sale_story": "Fresh produce pick"
   },
   {
     "item_name": "Whole Wheat Bread",
     "price": 3.49,
     "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&h=200&fit=crop",
-    "sale_story": "Buy 1 get 1 50% off"
+    "sale_story": "Great Value bakery deal"
   },
   {
     "item_name": "Cheddar Cheese Block",
     "price": 5.99,
     "image": "https://images.unsplash.com/photo-1618164436241-4473940d1f5c?w=200&h=200&fit=crop",
-    "sale_story": "PC product — member price"
+    "sale_story": "Great Value rollback deal"
   },
   {
     "item_name": "Baby Spinach",

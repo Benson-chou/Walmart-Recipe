@@ -1,6 +1,7 @@
 import { getLocalFlyerItems } from "@/lib/flyer";
 import {
   cleanZipCode,
+  getNearbyZipCodes,
   FLYER_LOCALE,
   FLYER_MERCHANT,
   FLYER_MERCHANT_ID,
@@ -115,6 +116,63 @@ export async function fetchFlippItems(zipCode: string): Promise<ScrapedFlyerItem
   return mapped;
 }
 
+export const MIN_GROCERY_DEALS_THRESHOLD = 10;
+
+/**
+ * Fetches flyer deals for a ZIP code, probing adjacent ZIPs and enriching
+ * with Everyday Low Price grocery staples if the local circular is sparse.
+ */
+export async function fetchFlippItemsWithNearby(
+  zipCode: string,
+  minThreshold = MIN_GROCERY_DEALS_THRESHOLD
+): Promise<ScrapedFlyerItem[]> {
+  const primary = await fetchFlippItems(zipCode);
+  const seen = new Set(primary.map((i) => i.item_name.toLowerCase().trim()));
+  const combined: ScrapedFlyerItem[] = [...primary];
+
+  // 1. If primary zip returned few grocery deals, probe adjacent ZIPs for store-specific circulars
+  if (combined.length < minThreshold) {
+    const nearbyZips = getNearbyZipCodes(zipCode, 3);
+    const nearbyResults = await Promise.allSettled(
+      nearbyZips.map((z) => fetchFlippItems(z))
+    );
+
+    for (const res of nearbyResults) {
+      if (res.status === "fulfilled" && Array.isArray(res.value)) {
+        for (const item of res.value) {
+          const key = item.item_name.toLowerCase().trim();
+          if (!seen.has(key)) {
+            seen.add(key);
+            combined.push(item);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. If deals across the area are still scarce (e.g. non-grocery promotional rotation),
+  // enrich with Walmart Everyday Low Price pantry & grocery staples so the user has full ingredients
+  if (combined.length < minThreshold) {
+    const staples = getLocalFlyerItems();
+    for (const st of staples) {
+      const key = st.item_name.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push({
+          item_name: st.item_name,
+          price: st.price,
+          image: st.image,
+          sale_story: st.sale_story || "Everyday Low Price",
+          category: st.category ?? resolveGroceryCategory(st.item_name),
+          external_id: st.id,
+        });
+      }
+    }
+  }
+
+  return combined;
+}
+
 export function isFlyerFresh(
   fetchedAt: string | null | undefined,
   validTo: string | null | undefined,
@@ -176,8 +234,9 @@ export async function getCachedOrFreshItems(input: {
   const newest = cached?.[0]?.fetched_at as string | undefined;
   const validTo = cached?.[0]?.valid_to as string | undefined;
   const fresh = Boolean(cached?.length) && isFlyerFresh(newest, validTo);
+  const hasEnoughItems = Boolean(cached && cached.length >= MIN_GROCERY_DEALS_THRESHOLD);
 
-  if (!input.forceRefresh && fresh && cached) {
+  if (!input.forceRefresh && fresh && hasEnoughItems && cached) {
     const validItems = cached.filter((row) => isGroceryName(row.item_name));
     return {
       items: validItems.map((row) => ({
@@ -194,7 +253,7 @@ export async function getCachedOrFreshItems(input: {
   }
 
   try {
-    const scraped = await fetchFlippItems(postal);
+    const scraped = await fetchFlippItemsWithNearby(postal);
     if (!scraped.length) {
       if (cached?.length) {
         const validItems = cached.filter((row) => isGroceryName(row.item_name));
