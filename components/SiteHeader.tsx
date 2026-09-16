@@ -43,7 +43,7 @@ export function SiteHeader({ username, loggedIn }: SiteHeaderProps) {
           <>
             {!isAuthPage && (
               <Link href="/home" className={pathname === "/home" ? "active" : undefined}>
-                Guest
+                {pathname.startsWith("/recipe/") ? "Home" : "Guest"}
               </Link>
             )}
             <Link href="/login" className={pathname === "/login" ? "active" : undefined}>

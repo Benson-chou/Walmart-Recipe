@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { RecipeSaveButton } from "@/components/RecipeSaveButton";
+import { ShareRecipeButton, recipePath } from "@/components/ShareRecipeButton";
 import { ensureIngredientQuantities } from "@/lib/ingredients";
 import type { Recipe } from "@/lib/types";
 
@@ -20,59 +23,13 @@ export function RecipeCard({
   onSavedChange,
 }: RecipeCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [saved, setSaved] = useState(initiallySaved);
-  const [busy, setBusy] = useState(false);
+  const [recipeId, setRecipeId] = useState(recipe.id);
   const [message, setMessage] = useState<string | null>(null);
 
   const ingredients = useMemo(
     () => ensureIngredientQuantities(recipe.Ingredients),
     [recipe.Ingredients]
   );
-
-  async function toggleSave() {
-    if (!loggedIn) {
-      setMessage("Log in to save recipes.");
-      return;
-    }
-    setBusy(true);
-    setMessage(null);
-    try {
-      const endpoint = saved ? "/api/recipes/delete" : "/api/recipes/save";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipe_name: recipe.Recipe_name,
-          recipe_ingredients: ingredients,
-          recipe_description: recipe.Instructions,
-          username,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const action = saved ? "unsave" : "save";
-        setMessage(
-          data.message ||
-            (res.status >= 500
-              ? `Could not ${action} this recipe right now. Please try again.`
-              : `Unable to ${action} recipe.`)
-        );
-        return;
-      }
-      const next = !saved;
-      setSaved(next);
-      setMessage(null);
-      onSavedChange?.(next);
-    } catch {
-      setMessage(
-        saved
-          ? "Network error — could not unsave. Check your connection."
-          : "Network error — could not save. Check your connection."
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
 
   const sourceLabel =
     recipe.source === "generated"
@@ -111,22 +68,39 @@ export function RecipeCard({
               {sourceLabel}
             </span>
           ) : null}
-          <h3>{recipe.Recipe_name}</h3>
+          <h3>
+            {recipeId ? (
+              <Link
+                href={recipePath(recipeId)}
+                className="recipe-title-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {recipe.Recipe_name}
+              </Link>
+            ) : (
+              recipe.Recipe_name
+            )}
+          </h3>
         </div>
         <div className="recipe-actions">
-          <button
-            type="button"
-            className="icon-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              void toggleSave();
+          <RecipeSaveButton
+            recipe={recipe}
+            loggedIn={loggedIn}
+            username={username}
+            initiallySaved={initiallySaved}
+            onMessage={setMessage}
+            onSavedChange={(saved, id) => {
+              if (id) setRecipeId(id);
+              onSavedChange?.(saved);
             }}
-            disabled={busy}
-            aria-label={saved ? "Unsave recipe" : "Save recipe"}
-            title={saved ? "Unsave" : "Save"}
-          >
-            {saved ? "♥" : "♡"}
-          </button>
+          />
+          {recipeId ? (
+            <ShareRecipeButton
+              recipeId={recipeId}
+              recipeName={recipe.Recipe_name}
+              variant="icon"
+            />
+          ) : null}
           <button
             type="button"
             className="ghost-button"

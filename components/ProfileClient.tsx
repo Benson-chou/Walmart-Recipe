@@ -139,7 +139,7 @@ export function ProfileClient({
             <div className="recipe-list">
               {recipes.map((recipe) => (
                 <RecipeCard
-                  key={recipe.Recipe_name}
+                  key={recipe.id ?? recipe.Recipe_name}
                   recipe={recipe}
                   loggedIn
                   username={profile.username}
