@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AllergyMultiSelect } from "@/components/AllergyMultiSelect";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -21,15 +21,34 @@ type ProfileClientProps = {
 export function ProfileClient({
   profile,
   recipes: initialRecipes,
-  recommended = [],
+  recommended: initialRecommended = [],
 }: ProfileClientProps) {
   const router = useRouter();
   const [location, setLocation] = useState(profile.preferred_location);
   const [allergies, setAllergies] = useState(() => parseAllergies(profile.allergies));
   const [recipes, setRecipes] = useState(initialRecipes);
+  const [recommended, setRecommended] = useState(initialRecommended);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setRecipes(initialRecipes);
+    setRecommended(initialRecommended);
+  }, [initialRecipes, initialRecommended]);
+
+  const refreshRecommendations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/recipes/recommend", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.recipes)) {
+        setRecommended(data.recipes);
+      }
+    } catch (err) {
+      console.error("Failed to refresh recommendations:", err);
+    }
+  }, []);
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
@@ -130,6 +149,7 @@ export function ProfileClient({
                       setRecipes((prev) =>
                         prev.filter((r) => r.Recipe_name !== recipe.Recipe_name)
                       );
+                      void refreshRecommendations();
                     }
                   }}
                 />
@@ -153,10 +173,21 @@ export function ProfileClient({
             <div className="recipe-list">
               {recommended.map((recipe) => (
                 <RecipeCard
-                  key={`rec-${recipe.Recipe_name}`}
+                  key={`rec-${recipe.id ?? recipe.Recipe_name}`}
                   recipe={recipe}
                   loggedIn
                   username={profile.username}
+                  onSavedChange={(saved) => {
+                    if (saved) {
+                      // Move into bookmarks and refresh personalized suggestions
+                      setRecipes((prev) =>
+                        prev.some((r) => r.Recipe_name === recipe.Recipe_name)
+                          ? prev
+                          : [...prev, recipe]
+                      );
+                      void refreshRecommendations();
+                    }
+                  }}
                 />
               ))}
             </div>

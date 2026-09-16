@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   let items = getLocalFlyerItems();
+  let flyerSource: "cache" | "scrape" | "seed" | "db" = "seed";
   let loggedIn = false;
   let username: string | null = null;
   let location = DEFAULT_ZIP;
@@ -37,7 +38,10 @@ export default async function HomePage() {
 
       if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
         const flyer = await getCachedOrFreshItems({ postalCode: location });
-        if (flyer.items.length) items = flyer.items;
+        if (flyer.items.length) {
+          items = flyer.items;
+          flyerSource = flyer.source;
+        }
       } else {
         const withCat = await supabase
           .from("items")
@@ -63,6 +67,7 @@ export default async function HomePage() {
               sale_story: row.sale_story,
               category: (row as { category?: string }).category,
             }));
+          flyerSource = "db";
         }
       }
     } catch (error) {
@@ -73,6 +78,7 @@ export default async function HomePage() {
   return (
     <HomeClient
       items={items}
+      flyerSource={flyerSource}
       loggedIn={loggedIn}
       username={username}
       location={location}

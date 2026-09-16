@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { recommendForUser } from "@/lib/agents/recommend";
+import { parseEmbedding } from "@/lib/embeddings";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,13 +30,18 @@ export async function GET() {
     .eq("user_id", user.id);
 
   const recipes = await recommendForUser({
-    userEmbedding: Array.isArray(profile?.embedding)
-      ? (profile?.embedding as number[])
-      : null,
+    userEmbedding: parseEmbedding(profile?.embedding),
     allergies: profile?.allergies ?? "None",
     excludeIds: (saved ?? []).map((row) => row.recipe_id),
     limit: 6,
   });
 
-  return NextResponse.json({ recipes });
+  return NextResponse.json(
+    { recipes },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    }
+  );
 }

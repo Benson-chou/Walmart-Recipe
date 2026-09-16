@@ -24,6 +24,36 @@ export function l2Normalize(vec: number[]): number[] {
   return vec.map((v) => v / norm);
 }
 
+/**
+ * Supabase/pgvector often returns embeddings as a JSON string ("[0.1, ...]")
+ * instead of a number[]. Normalize either form.
+ */
+export function parseEmbedding(value: unknown): number[] | null {
+  if (Array.isArray(value) && value.length > 0 && typeof value[0] === "number") {
+    return value as number[];
+  }
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "number") {
+        return parsed as number[];
+      }
+    } catch {
+      // pgvector text form: {0.1,0.2,...}
+      const cleaned = value.trim().replace(/^\{/, "[").replace(/\}$/, "]");
+      try {
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(Number).filter((n) => Number.isFinite(n));
+        }
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
 export function meanPool(vectors: number[][]): number[] {
   if (!vectors.length) return new Array(EMBEDDING_DIM).fill(0);
   const dim = vectors[0].length;
@@ -32,6 +62,29 @@ export function meanPool(vectors: number[][]): number[] {
     for (let i = 0; i < dim; i++) out[i] += vec[i] ?? 0;
   }
   for (let i = 0; i < dim; i++) out[i] /= vectors.length;
+  return l2Normalize(out);
+}
+
+/** Weighted average of vectors, then L2-normalize. */
+export function weightedMeanPool(
+  items: Array<{ vector: number[]; weight: number }>
+): number[] {
+  const usable = items.filter((item) => item.vector.length > 0 && item.weight > 0);
+  if (!usable.length) return new Array(EMBEDDING_DIM).fill(0);
+
+  const dim = usable[0].vector.length;
+  const out = new Array(dim).fill(0);
+  let totalWeight = 0;
+
+  for (const { vector, weight } of usable) {
+    totalWeight += weight;
+    for (let i = 0; i < dim; i++) {
+      out[i] += (vector[i] ?? 0) * weight;
+    }
+  }
+
+  if (totalWeight <= 0) return new Array(EMBEDDING_DIM).fill(0);
+  for (let i = 0; i < dim; i++) out[i] /= totalWeight;
   return l2Normalize(out);
 }
 

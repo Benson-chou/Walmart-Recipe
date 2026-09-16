@@ -48,16 +48,27 @@ export function RecipeCard({
           username,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMessage(data.message || "Something went wrong.");
+        const action = saved ? "unsave" : "save";
+        setMessage(
+          data.message ||
+            (res.status >= 500
+              ? `Could not ${action} this recipe right now. Please try again.`
+              : `Unable to ${action} recipe.`)
+        );
         return;
       }
       const next = !saved;
       setSaved(next);
+      setMessage(null);
       onSavedChange?.(next);
     } catch {
-      setMessage("Network error. Try again.");
+      setMessage(
+        saved
+          ? "Network error — could not unsave. Check your connection."
+          : "Network error — could not save. Check your connection."
+      );
     } finally {
       setBusy(false);
     }
@@ -70,13 +81,30 @@ export function RecipeCard({
         ? "From catalog"
         : null;
 
+  function toggleExpanded() {
+    setExpanded((v) => !v);
+  }
+
   return (
     <article
       className={`recipe-card ${expanded ? "expanded" : ""} ${
         recipe.source ? `source-${recipe.source}` : ""
       }`}
     >
-      <div className="recipe-top">
+      <div
+        className="recipe-top recipe-top-toggle"
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={expanded ? `Collapse ${recipe.Recipe_name}` : `Expand ${recipe.Recipe_name}`}
+        onClick={toggleExpanded}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleExpanded();
+          }
+        }}
+      >
         <div className="recipe-title-block">
           {sourceLabel ? (
             <span className={`source-badge source-badge-${recipe.source}`}>
@@ -89,7 +117,10 @@ export function RecipeCard({
           <button
             type="button"
             className="icon-button"
-            onClick={toggleSave}
+            onClick={(e) => {
+              e.stopPropagation();
+              void toggleSave();
+            }}
             disabled={busy}
             aria-label={saved ? "Unsave recipe" : "Save recipe"}
             title={saved ? "Unsave" : "Save"}
@@ -99,14 +130,21 @@ export function RecipeCard({
           <button
             type="button"
             className="ghost-button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleExpanded();
+            }}
           >
             {expanded ? "Collapse" : "Expand"}
           </button>
         </div>
       </div>
 
-      {message ? <p className="form-error">{message}</p> : null}
+      {message ? (
+        <p className="form-error recipe-save-error" role="alert">
+          {message}
+        </p>
+      ) : null}
 
       {expanded ? (
         <div className="recipe-body">
@@ -120,7 +158,18 @@ export function RecipeCard({
           </div>
         </div>
       ) : (
-        <p className="recipe-preview">
+        <p
+          className="recipe-preview recipe-preview-toggle"
+          role="button"
+          tabIndex={0}
+          onClick={toggleExpanded}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggleExpanded();
+            }
+          }}
+        >
           {ingredients.split("\n").slice(0, 3).join(" · ")}
         </p>
       )}

@@ -1,5 +1,5 @@
 import { allergiesToFilterList, extractAllergensFromText, filterItemsByAllergies, recipeConflictsWithAllergies } from "@/lib/allergens";
-import { embedText, recipeToEmbedText } from "@/lib/embeddings";
+import { embedText, parseEmbedding, recipeToEmbedText } from "@/lib/embeddings";
 import { runOrchestratorAgent } from "@/lib/agents/orchestrator";
 import { runValidatorLoop } from "@/lib/agents/validator-loop";
 import {
@@ -233,17 +233,26 @@ export async function recommendForUser(input: {
   limit?: number;
 }): Promise<Recipe[]> {
   const filterAllergens = allergiesToFilterList(input.allergies);
+  const parsed = parseEmbedding(input.userEmbedding);
+  // Avoid embedding the allergy label itself as the query ("Allergies: Mustard"
+  // retrieves mustard recipes that then get filtered out → 0–1 results).
   const queryEmbedding =
-    input.userEmbedding?.length
-      ? input.userEmbedding
-      : await embedText(`Allergies: ${input.allergies || "None"}`);
+    parsed?.length
+      ? parsed
+      : await embedText("weeknight dinner recipes home cooking favorites");
 
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const admin = createAdminClient();
+    const limit = input.limit ?? 6;
+    const exclude = new Set(input.excludeIds ?? []);
+    // Over-fetch heavily: allergen RPC filter + text re-check + exclude saved
+    // can discard most of a small candidate pool.
+    const matchCount = Math.min(80, Math.max(24, limit + exclude.size + 24));
+
     const { data, error } = await admin.rpc("match_recipes", {
       query_embedding: queryEmbedding,
-      match_count: input.limit ?? 6,
+      match_count: matchCount,
       filter_allergens: filterAllergens,
     });
     if (error) {
@@ -251,7 +260,6 @@ export async function recommendForUser(input: {
       return [];
     }
 
-    const exclude = new Set(input.excludeIds ?? []);
     return ((data ?? []) as Array<{
       id: string;
       recipe_name: string;
@@ -269,7 +277,7 @@ export async function recommendForUser(input: {
         })
       )
       .filter((recipe) => !recipeConflictsWithAllergies(recipe, input.allergies))
-      .slice(0, input.limit ?? 6);
+      .slice(0, limit);
   } catch (error) {
     console.error("recommendForUser failed:", error);
     return [];

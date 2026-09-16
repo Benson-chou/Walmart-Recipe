@@ -84,7 +84,10 @@ export async function POST(request: Request) {
       console.error("refreshUserEmbedding failed:", error);
     }
 
-    return NextResponse.json({ message: "Recipe saved successfully" });
+    return NextResponse.json({
+      message: "Recipe saved successfully",
+      recipe_id: recipeId,
+    });
   } catch {
     return NextResponse.json({ message: "Server Error" }, { status: 500 });
   }

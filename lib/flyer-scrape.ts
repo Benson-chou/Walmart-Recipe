@@ -187,6 +187,14 @@ export function isFlyerFresh(
   return ageMs < maxAgeHours * 60 * 60 * 1000;
 }
 
+/**
+ * Serve flyer items from Supabase cache when fresh (< ~18h / within valid_to)
+ * and dense enough (>= MIN_GROCERY_DEALS_THRESHOLD). Otherwise scrape Flipp
+ * (nearby ZIPs + staple enrichment), write back to `items`, and return.
+ *
+ * Production: prefer Vercel Cron (`/api/cron/refresh-flyers`) or
+ * `POST /api/admin/scrape` so page loads mostly hit cache, not Flipp.
+ */
 export async function getCachedOrFreshItems(input: {
   postalCode: string;
   forceRefresh?: boolean;

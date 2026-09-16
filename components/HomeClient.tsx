@@ -12,16 +12,36 @@ import { filterItemsByAllergies } from "@/lib/allergens";
 import { type CookingTierId, DEFAULT_COOKING_TIER } from "@/lib/cooking-tier";
 import type { FlyerItem, Recipe } from "@/lib/types";
 
+type FlyerSource = "cache" | "scrape" | "seed" | "db";
+
 type HomeClientProps = {
   items: FlyerItem[];
+  flyerSource?: FlyerSource;
   loggedIn: boolean;
   username?: string | null;
   location: string;
   allergies: string;
 };
 
+function friendlyGenerateError(status: number, message?: string): string {
+  if (status === 429) {
+    return message || "Too many requests. Wait a moment and try again.";
+  }
+  if (status === 503) {
+    return (
+      message ||
+      "Recipe AI is temporarily unavailable (high demand or missing configuration). Try again shortly."
+    );
+  }
+  if (status >= 500) {
+    return message || "Something went wrong generating recipes. Please try again.";
+  }
+  return message || "Could not generate recipes.";
+}
+
 export function HomeClient({
   items,
+  flyerSource = "cache",
   loggedIn,
   username,
   location,
@@ -39,6 +59,8 @@ export function HomeClient({
   const [pending, startTransition] = useTransition();
 
   const selectedList = useMemo(() => Array.from(selected), [selected]);
+  const isSeedFlyer = flyerSource === "seed";
+  const isEmptyFlyer = items.length === 0;
 
   function toggleItem(name: string) {
     setSelected((prev) => {
@@ -80,6 +102,10 @@ export function HomeClient({
     setError(null);
     setAllergySkipped([]);
     setSystemNotice(null);
+    if (isEmptyFlyer) {
+      setError("No flyer items available yet. Check your ZIP on the profile page or try again later.");
+      return;
+    }
     if (selectedList.length === 0) {
       setError("Please select at least one item.");
       return;
@@ -111,9 +137,9 @@ export function HomeClient({
             styleRequest: styleRequest.trim() || undefined,
           }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setError(data.message || "Could not generate recipes.");
+          setError(friendlyGenerateError(res.status, data.message));
           return;
         }
         setRecipes(data.recipes || []);
@@ -125,7 +151,7 @@ export function HomeClient({
           setSystemNotice(data.notice);
         }
       } catch {
-        setError("Network error. Try again.");
+        setError("Network error — check your connection and try again.");
       }
     });
   }
@@ -143,6 +169,38 @@ export function HomeClient({
             Pick weekly ad items, set a budget, and get recipes tailored to what&apos;s on sale near you.
           </p>
         </section>
+
+        {isEmptyFlyer ? (
+          <div className="notice-card notice-card-empty" role="status">
+            <div className="notice-icon-wrap" aria-hidden>
+              <span className="notice-spark">!</span>
+            </div>
+            <div className="notice-content">
+              <div className="notice-header">
+                <span className="notice-badge badge-empty">No flyer deals</span>
+                <span className="notice-text">
+                  We couldn&apos;t load Walmart deals for ZIP {location}. Update your location on
+                  your profile, or try again in a few minutes while the flyer cache refreshes.
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : isSeedFlyer ? (
+          <div className="notice-card notice-card-empty" role="status">
+            <div className="notice-icon-wrap" aria-hidden>
+              <span className="notice-spark">✦</span>
+            </div>
+            <div className="notice-content">
+              <div className="notice-header">
+                <span className="notice-badge badge-empty">Sample shelf</span>
+                <span className="notice-text">
+                  Showing Everyday Low Price staples while live flyer data loads for ZIP {location}.
+                  Recipes still work — live deals appear once the cache is refreshed.
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <ItemGrid
           items={items}

@@ -3,9 +3,10 @@
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/seed-recipes.ts
- *   npx tsx --env-file=.env.local scripts/seed-recipes.ts --parquet data/recipes.parquet --limit 2000
- *   npx tsx --env-file=.env.local scripts/seed-recipes.ts --csv data/RAW_recipes.csv --limit 2000
+ *   npx tsx --env-file=.env.local scripts/seed-recipes.ts --parquet data/recipes.parquet --limit 2500 --skip-existing
+ *   npx tsx --env-file=.env.local scripts/seed-recipes.ts --csv data/RAW_recipes.csv --limit 2500 --skip-existing
  *
+ * --skip-existing: skip recipe names already in DB (no re-embed). Rate-limits embeds to ~90/min.
  * Without --csv/--parquet, loads data/seed-recipes.json (or Gemini bootstrap).
  */
 import { createClient } from "@supabase/supabase-js";
@@ -30,23 +31,58 @@ function mockEmbed(text: string) {
   return l2Normalize(vec);
 }
 
-async function embedText(text: string) {
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const status = (error as { status?: number })?.status;
+  const msg = String((error as { message?: string })?.message ?? "").toLowerCase();
+  return status === 429 || msg.includes("429") || msg.includes("quota") || msg.includes("rate");
+}
+
+async function embedText(text: string, options?: { allowMock?: boolean }) {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return mockEmbed(text);
-  try {
-    const { GoogleGenerativeAI } = await import("@google/generative-ai");
-    const { GEMINI_EMBED_MODEL } = await import("../lib/gemini");
-    const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: GEMINI_EMBED_MODEL });
-    const result = await model.embedContent({
-      content: { role: "user", parts: [{ text: text.slice(0, 8000) }] },
-      outputDimensionality: EMBEDDING_DIM,
-    } as Parameters<typeof model.embedContent>[0]);
-    return l2Normalize(result.embedding.values);
-  } catch (error) {
-    console.error("embed failed, mock:", error);
+  if (!key) {
+    if (options?.allowMock === false) {
+      throw new Error("GEMINI_API_KEY required for real embeddings");
+    }
     return mockEmbed(text);
   }
+
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const { GEMINI_EMBED_MODEL } = await import("../lib/gemini");
+  const genAI = new GoogleGenerativeAI(key);
+  const model = genAI.getGenerativeModel({ model: GEMINI_EMBED_MODEL });
+
+  // Free tier embed quota is ~100 RPM — stay under it and retry on 429
+  const maxAttempts = 8;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await model.embedContent({
+        content: { role: "user", parts: [{ text: text.slice(0, 8000) }] },
+        outputDimensionality: EMBEDDING_DIM,
+      } as Parameters<typeof model.embedContent>[0]);
+      return l2Normalize(result.embedding.values);
+    } catch (error) {
+      if (isRateLimitError(error) && attempt < maxAttempts) {
+        const waitMs = Math.min(90_000, 15_000 * attempt);
+        console.warn(
+          `  embed rate-limited (attempt ${attempt}/${maxAttempts}), waiting ${Math.round(waitMs / 1000)}s...`
+        );
+        await sleep(waitMs);
+        continue;
+      }
+      if (options?.allowMock === false) throw error;
+      console.error("embed failed, mock:", error);
+      return mockEmbed(text);
+    }
+  }
+
+  if (options?.allowMock === false) {
+    throw new Error("embedText exhausted retries");
+  }
+  return mockEmbed(text);
 }
 
 function extractAllergens(text: string) {
@@ -376,7 +412,8 @@ async function main() {
   const csvIdx = args.indexOf("--csv");
   const parquetIdx = args.indexOf("--parquet");
   const limitIdx = args.indexOf("--limit");
-  const limit = limitIdx >= 0 ? Number(args[limitIdx + 1]) || 2000 : 2000;
+  const limit = limitIdx >= 0 ? Number(args[limitIdx + 1]) || 2500 : 2500;
+  const skipExisting = args.includes("--skip-existing");
   const csvPath = csvIdx >= 0 ? resolve(args[csvIdx + 1]) : null;
   const parquetPath = parquetIdx >= 0 ? resolve(args[parquetIdx + 1]) : null;
 
@@ -432,16 +469,43 @@ async function main() {
     }
   }
 
-  console.log(`Embedding and upserting ${recipes.length} recipes...`);
+  console.log(
+    `Embedding and upserting ${recipes.length} recipes${skipExisting ? " (skip existing names)" : ""}...`
+  );
   const ws = (await import("ws")).default;
   const admin = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
     realtime: { transport: ws as unknown as typeof WebSocket },
   });
 
+  // Preload existing names once so --skip-existing doesn't N+1 query
+  const existingNames = new Set<string>();
+  if (skipExisting) {
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+      const { data: page } = await admin
+        .from("recipes")
+        .select("recipe_name")
+        .range(from, from + pageSize - 1);
+      if (!page?.length) break;
+      for (const row of page) {
+        if (row.recipe_name) existingNames.add(row.recipe_name);
+      }
+      if (page.length < pageSize) break;
+    }
+    console.log(`  Found ${existingNames.size} existing recipes in DB`);
+  }
+
   let ok = 0;
+  let skipped = 0;
   for (const recipe of recipes) {
     if (!recipe.recipe_name || !recipe.ingredients) continue;
+
+    if (skipExisting && existingNames.has(recipe.recipe_name)) {
+      skipped += 1;
+      continue;
+    }
+
     const embedding = await embedText(
       [
         recipe.recipe_name,
@@ -451,8 +515,11 @@ async function main() {
         recipe.tags.find((t) => t.startsWith("blurb:"))?.replace(/^blurb:/, "") ?? "",
       ]
         .filter(Boolean)
-        .join("\n")
+        .join("\n"),
+      { allowMock: false }
     );
+    // Stay under free-tier ~100 embed RPM
+    await sleep(650);
     const allergens = extractAllergens(`${recipe.ingredients}\n${recipe.description}`);
     const tags = recipe.tags.filter((t) => !t.startsWith("blurb:")).slice(0, 12);
 
@@ -489,12 +556,13 @@ async function main() {
         console.error("insert failed", recipe.recipe_name, error.message);
         continue;
       }
+      existingNames.add(recipe.recipe_name);
     }
     ok += 1;
-    if (ok % 10 === 0) console.log(`  ${ok}/${recipes.length}`);
+    if (ok % 10 === 0) console.log(`  ${ok} upserted / ${skipped} skipped / ${recipes.length} loaded`);
   }
 
-  console.log(`Done. Upserted ${ok} recipes.`);
+  console.log(`Done. Upserted ${ok} recipes (${skipped} skipped as already present).`);
   // keep hash util available for future dedupe keys
   void createHash;
 }

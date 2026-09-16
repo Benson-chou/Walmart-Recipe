@@ -37,6 +37,11 @@ An intelligent grocery-deal meal planner built with **Next.js (App Router)**, **
 - **Fast Circuit Breaker**: If all Gemini models are congested, the app instantly falls back to 3 top verified catalog recipes, preventing long loading freezes.
 - **Clear Status Banners**: Distinct UI notifications inform users if a high-demand fallback occurred or if items were omitted due to allergy safeguards.
 
+### 6. Personalized “You may also like”
+- User preference vectors weight **saved recipes** much more heavily than ZIP/allergy text.
+- Recent bookmarks get a recency boost so new saves move recommendations faster.
+- Catalog growth: AI-generated recipes are persisted, and Food.com seeding targets ~2.5k recipes.
+
 ---
 
 ## Tech Stack
@@ -87,8 +92,10 @@ Embed sample recipes into your Supabase database:
 # Seed default catalog recipes with Gemini embeddings
 npm run db:seed
 
-# Optional: Seed from Food.com Parquet dataset
-npx tsx --env-file=.env.local scripts/seed-recipes.ts --parquet data/recipes.parquet --limit 500
+# Optional: Seed from Food.com Parquet dataset (~2500 recipes; skips names already in DB)
+npm run db:seed:foodcom
+# or:
+npx tsx --env-file=.env.local scripts/seed-recipes.ts --parquet data/recipes.parquet --limit 2500 --skip-existing
 ```
 
 ### 5. Run the Application
@@ -102,18 +109,98 @@ Open [http://localhost:3000](http://localhost:3000) to view the app. Guest mode 
 
 ---
 
+## Deploy on Vercel
+
+### 1. Push the repo and import the project
+
+1. Push this repository to GitHub (or GitLab / Bitbucket).
+2. In [Vercel](https://vercel.com) → **Add New…** → **Project** → import the repo.
+3. Framework preset: **Next.js**. Leave build command `next build` and output default.
+4. Click **Deploy** once (it may fail until env vars are set — that’s fine).
+
+### 2. Environment variables (Vercel → Project → Settings → Environment Variables)
+
+Set these for **Production** (and Preview if you want PR demos):
+
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Same page (anon / public) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server-only. Never expose to the client. |
+| `GEMINI_API_KEY` | Yes | [Google AI Studio](https://aistudio.google.com/) |
+| `SCRAPE_SECRET` | Yes | Long random string. Protects `POST /api/admin/scrape`. Do **not** leave as `change-me` in production. |
+| `CRON_SECRET` | Recommended | Bearer token for Vercel Cron. If unset, cron falls back to `SCRAPE_SECRET`. |
+| `CRON_ZIPS` | Optional | Comma-separated ZIPs to refresh (max 5), e.g. `90210,10001`. Defaults to `90210`. |
+| `GEMINI_CHAT_MODEL` | Optional | Override primary chat model |
+
+Generate secrets locally:
+
+```bash
+openssl rand -hex 32
+```
+
+Redeploy after saving env vars.
+
+### 3. Supabase Auth redirect URLs
+
+In Supabase → **Authentication** → **URL Configuration**:
+
+- **Site URL**: `https://YOUR_PROJECT.vercel.app`
+- **Redirect URLs**: add `https://YOUR_PROJECT.vercel.app/**` and `http://localhost:3000/**` for local dev
+
+### 4. Database migrations & seed (production)
+
+Apply migrations against your Supabase project (SQL Editor or CLI), then seed the recipe catalog once from your machine (embeddings need `GEMINI_API_KEY`):
+
+```bash
+# From this repo, pointed at production env
+npx supabase db push
+npm run db:seed
+# Optional larger Food.com subset:
+npm run db:seed:foodcom
+```
+
+### 5. Flyer cache & cron
+
+- Home / `GET /api/items` serve from Supabase when the ZIP cache is fresh (~18h / within `valid_to`) and dense enough; otherwise they scrape Flipp once and write back.
+- `vercel.json` schedules **daily** refresh at `14:00 UTC` → `GET /api/cron/refresh-flyers`.
+- Vercel sends `Authorization: Bearer <CRON_SECRET>` automatically when `CRON_SECRET` is set.
+- Manual refresh:
+
+```bash
+curl -X POST https://YOUR_PROJECT.vercel.app/api/admin/scrape \
+  -H "content-type: application/json" \
+  -H "x-scrape-secret: $SCRAPE_SECRET" \
+  -d '{"zip":"90210"}'
+```
+
+### 6. Analytics & rate limits
+
+- **Vercel Analytics** is wired in `app/layout.tsx` via `@vercel/analytics`. Enable **Web Analytics** in the Vercel project dashboard (free on Hobby).
+- `/api/recipes/generate` is rate-limited (~8 requests / minute / IP or user) to protect Gemini quota.
+
+### 7. Post-deploy smoke test
+
+1. Open `/home` — flyer shelf loads (or sample staples banner if scrape is cold).
+2. Generate recipes with a few selected items.
+3. Sign up / sign in → save a recipe → check profile “You may also like”.
+4. Confirm cron appears under Vercel → **Settings** → **Cron Jobs** (Hobby: limited frequency; Pro if you need more).
+
+---
+
 ## Project Structure
 
 ```
 ├── app/
 │   ├── api/
 │   │   ├── admin/scrape/route.ts       # Manual flyer scraping webhook
+│   │   ├── cron/refresh-flyers/        # Vercel Cron flyer refresh
 │   │   ├── items/route.ts              # Cached flyer items by ZIP
 │   │   ├── recipes/generate/route.ts   # Agentic RAG recommendation endpoint
 │   │   ├── recipes/recommend/route.ts  # Profile recommendation endpoint
 │   │   └── profile/route.ts            # User profile preferences
 │   ├── home/page.tsx                   # Main flyer & recipe studio
-│   ├── layout.tsx                      # Root layout & theme
+│   ├── layout.tsx                      # Root layout, theme & Analytics
 │   └── globals.css                     # Global styles, cards & tokens
 ├── components/
 │   ├── ItemGrid.tsx                    # Shelf-card grid with aisle tabs & live tally
@@ -129,10 +216,13 @@ Open [http://localhost:3000](http://localhost:3000) to view the app. Guest mode 
 │   │   └── tools/search-food-com.ts    # Gemini tool definition for pgvector search
 │   ├── allergens.ts                    # Granular allergy checking & ingredient parsing
 │   ├── cooking-tier.ts                 # Vibe tiers (temperatures & prompt strategies)
-│   ├── flyer-scrape.ts                 # Flipp scraping, parsing, & filtering for Walmart
+│   ├── env.ts                          # Env helpers & production secret checks
+│   ├── flyer-scrape.ts                 # Flipp scraping, cache, & Walmart enrichment
 │   ├── gemini.ts                       # Gemini model configuration, timeouts & failover
 │   ├── grocery-categories.ts           # Grocery aisle classification rules
-│   └── ingredients.ts                  # Quantity validation & formatting rules
+│   ├── ingredients.ts                  # Quantity validation & formatting rules
+│   └── rate-limit.ts                   # In-memory generate rate limiter
+├── vercel.json                         # Daily flyer cron schedule
 └── scripts/
     ├── seed-recipes.ts                 # Recipe ingestion & embedding script
     └── backfill-categories.ts          # Backfill aisle categories in Supabase

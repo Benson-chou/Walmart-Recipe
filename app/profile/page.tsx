@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { ProfileClient } from "@/components/ProfileClient";
 import { recommendForUser } from "@/lib/agents/recommend";
+import { parseEmbedding } from "@/lib/embeddings";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Recipe } from "@/lib/types";
@@ -51,9 +52,7 @@ export default async function ProfilePage() {
   let recommended: Recipe[] = [];
   try {
     recommended = await recommendForUser({
-      userEmbedding: Array.isArray(profile.embedding)
-        ? (profile.embedding as number[])
-        : null,
+      userEmbedding: parseEmbedding(profile.embedding),
       allergies: profile.allergies,
       excludeIds: (savedRows ?? []).map((row) => row.recipe_id).filter(Boolean),
       limit: 6,

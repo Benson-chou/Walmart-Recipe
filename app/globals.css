@@ -961,6 +961,33 @@ input {
   color: #ea580c;
 }
 
+.notice-card-empty {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  margin: 0 0 1.25rem;
+}
+
+.notice-card-empty .notice-icon-wrap {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.badge-empty {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.flyer-empty-copy {
+  margin: 1rem 0 0.25rem;
+  padding: 1rem 0.25rem;
+}
+
+.recipe-save-error {
+  padding: 0 1.1rem 0.35rem;
+  font-size: 0.88rem;
+}
+
 .notice-content {
   display: flex;
   flex-direction: column;
@@ -1437,6 +1464,31 @@ input {
   justify-content: space-between;
   gap: 1rem;
   align-items: start;
+}
+
+.recipe-top-toggle {
+  cursor: pointer;
+  border-radius: 8px;
+  margin: -0.35rem;
+  padding: 0.35rem;
+  transition: background 160ms ease;
+}
+
+.recipe-top-toggle:hover {
+  background: rgba(0, 113, 206, 0.05);
+}
+
+.recipe-top-toggle:focus-visible {
+  outline: 2px solid rgba(0, 113, 206, 0.45);
+  outline-offset: 2px;
+}
+
+.recipe-preview-toggle {
+  cursor: pointer;
+}
+
+.recipe-preview-toggle:hover {
+  color: var(--ink);
 }
 
 .recipe-title-block {

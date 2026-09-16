@@ -198,75 +198,81 @@ export function ItemGrid({
       )}
 
       {/* Vertical Grocery Shelf Grid */}
-      <ul className="item-shelf-grid">
-        {displayedItems.map((item) => {
-          const isOn = selected.has(item.item_name);
-          return (
-            <li key={item.id ?? item.item_name} className="item-card-wrapper">
-              <button
-                type="button"
-                className={`item-shelf-card ${isOn ? "selected" : ""}`}
-                onClick={() => onToggle(item.item_name)}
-                aria-pressed={isOn}
-              >
-                {/* Floating circular select checkbox */}
-                <div
-                  className={`item-check-circle ${isOn ? "checked" : ""}`}
-                  aria-hidden
+      {displayedItems.length === 0 ? (
+        <p className="empty-state flyer-empty-copy">
+          No grocery deals in this aisle right now. Try another category or refresh later.
+        </p>
+      ) : (
+        <ul className="item-shelf-grid">
+          {displayedItems.map((item) => {
+            const isOn = selected.has(item.item_name);
+            return (
+              <li key={item.id ?? item.item_name} className="item-card-wrapper">
+                <button
+                  type="button"
+                  className={`item-shelf-card ${isOn ? "selected" : ""}`}
+                  onClick={() => onToggle(item.item_name)}
+                  aria-pressed={isOn}
                 >
-                  {isOn && (
-                    <svg
-                      className="check-svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </div>
-
-                {/* 1:1 Aspect ratio image container */}
-                <div className="item-card-image-wrap">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.image}
-                    alt={item.item_name}
-                    loading="lazy"
-                  />
-                </div>
-
-                {/* Card body with price, clamped title, and deal badge */}
-                <div className="item-card-body">
-                  <div className="item-card-price">
-                    {item.price > 0 ? (
-                      `$${item.price.toFixed(2)}`
-                    ) : (
-                      <span className="deal-price-badge">
-                        <span className="deal-spark">✦</span> Special Deal
-                      </span>
+                  {/* Floating circular select checkbox */}
+                  <div
+                    className={`item-check-circle ${isOn ? "checked" : ""}`}
+                    aria-hidden
+                  >
+                    {isOn && (
+                      <svg
+                        className="check-svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     )}
                   </div>
-                  <h3 className="item-card-title" title={item.item_name}>
-                    {item.item_name}
-                  </h3>
-                  {item.sale_story ? (
-                    <div className="item-deal-badge" title={item.sale_story}>
-                      <span className="deal-spark">✦</span>
-                      <span className="deal-text">{item.sale_story}</span>
+
+                  {/* 1:1 Aspect ratio image container */}
+                  <div className="item-card-image-wrap">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.image}
+                      alt={item.item_name}
+                      loading="lazy"
+                    />
+                  </div>
+
+                  {/* Card body with price, clamped title, and deal badge */}
+                  <div className="item-card-body">
+                    <div className="item-card-price">
+                      {item.price > 0 ? (
+                        `$${item.price.toFixed(2)}`
+                      ) : (
+                        <span className="deal-price-badge">
+                          <span className="deal-spark">✦</span> Special Deal
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <div className="item-deal-spacer" aria-hidden />
-                  )}
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                    <h3 className="item-card-title" title={item.item_name}>
+                      {item.item_name}
+                    </h3>
+                    {item.sale_story ? (
+                      <div className="item-deal-badge" title={item.sale_story}>
+                        <span className="deal-spark">✦</span>
+                        <span className="deal-text">{item.sale_story}</span>
+                      </div>
+                    ) : (
+                      <div className="item-deal-spacer" aria-hidden />
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }
