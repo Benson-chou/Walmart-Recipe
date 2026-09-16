@@ -34,7 +34,7 @@ export default async function ProfilePage() {
 
   const { data: savedRows } = await supabase
     .from("saved")
-    .select("recipe_id, recipes ( recipe_name, ingredients, description )")
+    .select("recipe_id, recipes ( id, recipe_name, ingredients, description, source )")
     .eq("user_id", user.id);
 
   const recipes: Recipe[] = (savedRows || [])
@@ -42,9 +42,16 @@ export default async function ProfilePage() {
       const recipe = Array.isArray(row.recipes) ? row.recipes[0] : row.recipes;
       if (!recipe) return null;
       return {
+        id: recipe.id ?? row.recipe_id,
         Recipe_name: recipe.recipe_name,
         Ingredients: recipe.ingredients,
         Instructions: recipe.description,
+        source:
+          recipe.source === "generated"
+            ? "generated"
+            : recipe.source === "retrieved" || recipe.source === "seed"
+              ? "retrieved"
+              : undefined,
       } satisfies Recipe;
     })
     .filter(Boolean) as Recipe[];

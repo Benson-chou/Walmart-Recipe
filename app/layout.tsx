@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -15,7 +16,11 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: APP_NAME,
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`,
+  },
   description: APP_TAGLINE,
 };
 
