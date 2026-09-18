@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/env";
-import { cleanZipCode } from "@/lib/location";
+import { cleanZipCode, isValidUsZip } from "@/lib/location";
 import { createClient } from "@/lib/supabase/server";
 import { refreshUserEmbedding } from "@/lib/user-vector";
 
@@ -38,13 +38,6 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const preferred_location =
-      typeof body.preferred_location === "string"
-        ? cleanZipCode(body.preferred_location)
-        : undefined;
-    const allergies =
-      typeof body.allergies === "string" ? body.allergies : undefined;
-
     const supabase = await createClient();
     const {
       data: { user },
@@ -53,6 +46,20 @@ export async function PATCH(request: Request) {
     if (!user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+
+    let preferred_location: string | undefined;
+    if (typeof body.preferred_location === "string") {
+      const cleaned = cleanZipCode(body.preferred_location);
+      if (!isValidUsZip(cleaned)) {
+        return NextResponse.json(
+          { message: "Enter a valid US ZIP code (e.g. 90210)." },
+          { status: 400 }
+        );
+      }
+      preferred_location = cleaned;
+    }
+    const allergies =
+      typeof body.allergies === "string" ? body.allergies : undefined;
 
     const { data, error } = await supabase
       .from("profiles")

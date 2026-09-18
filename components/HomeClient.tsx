@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ItemGrid } from "@/components/ItemGrid";
 import { GenerateForm } from "@/components/GenerateForm";
@@ -10,9 +11,20 @@ import { APP_NAME } from "@/lib/brand";
 import { formatAllergies, parseAllergies } from "@/lib/allergies";
 import { filterItemsByAllergies } from "@/lib/allergens";
 import { type CookingTierId, DEFAULT_COOKING_TIER } from "@/lib/cooking-tier";
+import {
+  getMealPlanServerSnapshot,
+  getMealPlanSnapshot,
+  subscribeMealPlan,
+  writeMealPlanHandoff,
+} from "@/lib/meal-plan-store";
+import { recipePlanKey } from "@/lib/shopping-list";
 import type { FlyerItem, Recipe } from "@/lib/types";
-
-type FlyerSource = "cache" | "scrape" | "seed" | "db";
+import { ZipEditor } from "@/components/ZipEditor";
+import {
+  fetchFlyerForZip,
+  persistZipPreference,
+  type FlyerSource,
+} from "@/lib/zip-preference";
 
 type HomeClientProps = {
   items: FlyerItem[];
@@ -40,13 +52,18 @@ function friendlyGenerateError(status: number, message?: string): string {
 }
 
 export function HomeClient({
-  items,
-  flyerSource = "cache",
+  items: initialItems,
+  flyerSource: initialFlyerSource = "cache",
   loggedIn,
   username,
-  location,
+  location: initialLocation,
   allergies: initialAllergies,
 }: HomeClientProps) {
+  const [items, setItems] = useState(initialItems);
+  const [flyerSource, setFlyerSource] = useState<FlyerSource>(initialFlyerSource);
+  const [location, setLocation] = useState(initialLocation);
+  const [zipBusy, setZipBusy] = useState(false);
+  const [zipError, setZipError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tier, setTier] = useState<CookingTierId>(DEFAULT_COOKING_TIER);
   const [budget, setBudget] = useState("25");
@@ -57,6 +74,12 @@ export function HomeClient({
   const [allergySkipped, setAllergySkipped] = useState<string[]>([]);
   const [systemNotice, setSystemNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  const mealPlan = useSyncExternalStore(
+    subscribeMealPlan,
+    getMealPlanSnapshot,
+    getMealPlanServerSnapshot
+  );
 
   const selectedList = useMemo(() => Array.from(selected), [selected]);
   const isSeedFlyer = flyerSource === "seed";
@@ -98,12 +121,46 @@ export function HomeClient({
     setSelected(new Set());
   }
 
+  async function applyLocation(nextRaw: string) {
+    setZipError(null);
+    setZipBusy(true);
+    try {
+      const nextZip = await persistZipPreference(nextRaw, { loggedIn });
+      setLocation(nextZip);
+      setSelected(new Set());
+      const flyer = await fetchFlyerForZip(nextZip);
+      setItems(flyer.items);
+      setFlyerSource(flyer.source);
+    } catch (err) {
+      setZipError(
+        err instanceof Error ? err.message : "Could not update ZIP."
+      );
+    } finally {
+      setZipBusy(false);
+    }
+  }
+
+  function openMealPlan() {
+    const chosen = recipes.filter((recipe) =>
+      mealPlan.recipes.some((row) => recipePlanKey(row) === recipePlanKey(recipe))
+    );
+    if (chosen.length === 0) {
+      setError("Check at least one recipe to include in this week's meals.");
+      return;
+    }
+    writeMealPlanHandoff({
+      recipes: chosen,
+      haveNames: [],
+    });
+    router.push("/plan");
+  }
+
   function handleGenerate() {
     setError(null);
     setAllergySkipped([]);
     setSystemNotice(null);
     if (isEmptyFlyer) {
-      setError("No flyer items available yet. Check your ZIP on the profile page or try again later.");
+      setError("No flyer items available yet. Try another ZIP on the weekly ad, or try again later.");
       return;
     }
     if (selectedList.length === 0) {
@@ -142,7 +199,8 @@ export function HomeClient({
           setError(friendlyGenerateError(res.status, data.message));
           return;
         }
-        setRecipes(data.recipes || []);
+        const nextRecipes: Recipe[] = data.recipes || [];
+        setRecipes(nextRecipes);
 
         if (skipped.length > 0) {
           setAllergySkipped(skipped);
@@ -166,7 +224,7 @@ export function HomeClient({
           <p className="brand-mark">{APP_NAME}</p>
           <h1>Cook from this week&apos;s Walmart deals</h1>
           <p className="lede">
-            Pick weekly ad items, set a budget, and get recipes tailored to what&apos;s on sale near you.
+            Pick weekly ad items for your ZIP, set a budget, and get recipes tailored to what&apos;s on sale nearby.
           </p>
         </section>
 
@@ -179,8 +237,7 @@ export function HomeClient({
               <div className="notice-header">
                 <span className="notice-badge badge-empty">No flyer deals</span>
                 <span className="notice-text">
-                  We couldn&apos;t load Walmart deals for ZIP {location}. Update your location on
-                  your profile, or try again in a few minutes while the flyer cache refreshes.
+                  We couldn&apos;t load Walmart deals for ZIP {location}. Try another ZIP on the weekly ad, or wait a few minutes while the flyer cache refreshes.
                 </span>
               </div>
             </div>
@@ -208,6 +265,15 @@ export function HomeClient({
           onToggle={toggleItem}
           onSelectAll={selectAll}
           onClearAll={clearAll}
+          headingAction={
+            <ZipEditor
+              key={location}
+              location={location}
+              busy={zipBusy}
+              error={zipError}
+              onCommit={(zip) => void applyLocation(zip)}
+            />
+          }
         />
 
         <GenerateForm
@@ -215,7 +281,6 @@ export function HomeClient({
           budget={budget}
           allergies={allergies}
           styleRequest={styleRequest}
-          location={location}
           error={error}
           loading={pending}
           onTierChange={setTier}
@@ -316,7 +381,24 @@ export function HomeClient({
                 <p className="eyebrow">Your menu</p>
                 <h2>Recommended recipes</h2>
               </div>
+              <button type="button" className="primary-button" onClick={openMealPlan}>
+                Build shopping list
+              </button>
             </div>
+            <ol className="plan-steps">
+              <li>
+                Check the box next to a recipe to include it in your shopping list for this week.
+              </li>
+              <li>
+                The heart saves a recipe to your profile
+                {loggedIn ? "." : " — tap it to log in or sign up."}
+              </li>
+              <li>
+                Click <strong>Build shopping list</strong> for one list of
+                ingredients. Sale items from this week&apos;s ad are tagged on
+                the list.
+              </li>
+            </ol>
             <div className="recipe-list">
               {recipes.map((recipe) => (
                 <RecipeCard

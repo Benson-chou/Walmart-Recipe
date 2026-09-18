@@ -32,6 +32,9 @@ export function SiteHeader({ username, loggedIn }: SiteHeaderProps) {
       <nav className="nav-links">
         {loggedIn ? (
           <>
+            <Link href="/plan" className={pathname === "/plan" ? "active" : undefined}>
+              Meal plan
+            </Link>
             <Link href="/profile" className={pathname === "/profile" ? "active" : undefined}>
               {username || "Profile"}
             </Link>
@@ -46,6 +49,9 @@ export function SiteHeader({ username, loggedIn }: SiteHeaderProps) {
                 {pathname.startsWith("/recipe/") ? "Home" : "Guest"}
               </Link>
             )}
+            <Link href="/plan" className={pathname === "/plan" ? "active" : undefined}>
+              Meal plan
+            </Link>
             <Link href="/login" className={pathname === "/login" ? "active" : undefined}>
               Login
             </Link>

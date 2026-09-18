@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { AddToMealPlanButton } from "@/components/AddToMealPlanButton";
 import { RecipeSaveButton } from "@/components/RecipeSaveButton";
 import { ShareRecipeButton, recipePath } from "@/components/ShareRecipeButton";
 import { ensureIngredientQuantities } from "@/lib/ingredients";
@@ -24,7 +25,6 @@ export function RecipeCard({
 }: RecipeCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [recipeId, setRecipeId] = useState(recipe.id);
-  const [message, setMessage] = useState<string | null>(null);
 
   const ingredients = useMemo(
     () => ensureIngredientQuantities(recipe.Ingredients),
@@ -83,12 +83,12 @@ export function RecipeCard({
           </h3>
         </div>
         <div className="recipe-actions">
+          <AddToMealPlanButton recipe={recipe} />
           <RecipeSaveButton
             recipe={recipe}
             loggedIn={loggedIn}
             username={username}
             initiallySaved={initiallySaved}
-            onMessage={setMessage}
             onSavedChange={(saved, id) => {
               if (id) setRecipeId(id);
               onSavedChange?.(saved);
@@ -113,12 +113,6 @@ export function RecipeCard({
           </button>
         </div>
       </div>
-
-      {message ? (
-        <p className="form-error recipe-save-error" role="alert">
-          {message}
-        </p>
-      ) : null}
 
       {expanded ? (
         <div className="recipe-body">

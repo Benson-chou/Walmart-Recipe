@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { createPortal } from "react-dom";
+import { useRef, type MouseEvent } from "react";
+import { ActionTooltip, useAnchoredPopup } from "@/components/ActionTooltip";
 
 type ShareRecipeButtonProps = {
   recipeId: string;
@@ -37,48 +37,7 @@ export function ShareRecipeButton({
   variant = "button",
 }: ShareRecipeButtonProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [copied, setCopied] = useState(false);
-  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
-  const copiedTimer = useRef<number | null>(null);
-
-  function updateAnchor() {
-    const el = buttonRef.current;
-    if (!el) return;
-    const icon = el.querySelector("svg");
-    const rect = (icon ?? el).getBoundingClientRect();
-    setAnchor({ top: rect.top, left: rect.left + rect.width / 2 });
-  }
-
-  useEffect(() => {
-    return () => {
-      if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!copied) return;
-    updateAnchor();
-    function onReposition() {
-      updateAnchor();
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") hidePopup();
-    }
-    window.addEventListener("scroll", onReposition, true);
-    window.addEventListener("resize", onReposition);
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("scroll", onReposition, true);
-      window.removeEventListener("resize", onReposition);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [copied]);
-
-  function hidePopup() {
-    setCopied(false);
-    setAnchor(null);
-    if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
-  }
+  const popup = useAnchoredPopup(buttonRef, { autoHideMs: 1600 });
 
   async function copyLink(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -89,29 +48,8 @@ export function ShareRecipeButton({
     } catch {
       window.prompt(`Copy link for ${recipeName}`, url);
     }
-    updateAnchor();
-    setCopied(true);
-    if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
-    copiedTimer.current = window.setTimeout(() => {
-      setCopied(false);
-      setAnchor(null);
-    }, 1600);
+    popup.show();
   }
-
-  const popup =
-    copied && anchor && typeof document !== "undefined"
-      ? createPortal(
-          <div
-            className="share-copied-tooltip-anchor"
-            style={{ top: anchor.top, left: anchor.left }}
-          >
-            <div className="share-copied-tooltip" role="status">
-              Link Copied
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
 
   const button =
     variant === "icon" ? (
@@ -140,7 +78,9 @@ export function ShareRecipeButton({
   return (
     <>
       {button}
-      {popup}
+      <ActionTooltip open={popup.open} anchor={popup.anchor}>
+        Link Copied
+      </ActionTooltip>
     </>
   );
 }

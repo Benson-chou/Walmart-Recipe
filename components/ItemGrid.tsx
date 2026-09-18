@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { FlyerItem } from "@/lib/types";
 import {
   categorizeGroceryItem,
@@ -15,6 +15,7 @@ type ItemGridProps = {
   onToggle: (name: string) => void;
   onSelectAll: (targetNames?: string[]) => void;
   onClearAll?: () => void;
+  headingAction?: ReactNode;
 };
 
 export function ItemGrid({
@@ -23,6 +24,7 @@ export function ItemGrid({
   onToggle,
   onSelectAll,
   onClearAll,
+  headingAction,
 }: ItemGridProps) {
   const [activeCategory, setActiveCategory] = useState<GroceryCategory>("all");
 
@@ -146,6 +148,7 @@ export function ItemGrid({
         </div>
 
         <div className="flyer-header-actions">
+          {headingAction}
           {selectedCount > 0 && (
             <button
               type="button"

@@ -8,7 +8,6 @@ type GenerateFormProps = {
   budget: string;
   allergies: string[];
   styleRequest: string;
-  location: string;
   error?: string | null;
   loading?: boolean;
   onTierChange: (value: CookingTierId) => void;
@@ -23,7 +22,6 @@ export function GenerateForm({
   budget,
   allergies,
   styleRequest,
-  location,
   error,
   loading,
   onTierChange,
@@ -39,7 +37,6 @@ export function GenerateForm({
           <p className="eyebrow">Customize</p>
           <h2>Help the kitchen know you</h2>
         </div>
-        <p className="location-chip">ZIP: {location}</p>
       </div>
 
       <div className="generate-grid">

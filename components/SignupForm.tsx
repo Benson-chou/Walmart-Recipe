@@ -9,14 +9,15 @@ import { createClient } from "@/lib/supabase/client";
 import { APP_NAME } from "@/lib/brand";
 import { formatAllergies } from "@/lib/allergies";
 import { isSupabaseConfigured } from "@/lib/env";
-import { cleanZipCode, DEFAULT_ZIP, isValidUsZip } from "@/lib/location";
+import { cleanZipCode, isValidUsZip } from "@/lib/location";
+import { readZipCookie, writeZipCookie } from "@/lib/zip-preference";
 
 export function SignupForm() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [zipCode, setZipCode] = useState("");
+  const [zipCode, setZipCode] = useState(() => readZipCookie() ?? "");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,6 +70,7 @@ export function SignupForm() {
         });
       }
 
+      writeZipCookie(cleanZip);
       router.push("/home");
       router.refresh();
     } catch {
