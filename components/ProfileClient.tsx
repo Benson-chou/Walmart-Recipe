@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AllergyMultiSelect } from "@/components/AllergyMultiSelect";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -10,7 +11,8 @@ import { createClient } from "@/lib/supabase/client";
 import { APP_NAME } from "@/lib/brand";
 import { formatAllergies, parseAllergies } from "@/lib/allergies";
 import { isSupabaseConfigured } from "@/lib/env";
-import { cleanZipCode } from "@/lib/location";
+import { cleanZipCode, isValidUsZip } from "@/lib/location";
+import { writeZipCookie } from "@/lib/zip-preference";
 
 type ProfileClientProps = {
   profile: Profile;
@@ -31,11 +33,18 @@ export function ProfileClient({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [prevInitialRecipes, setPrevInitialRecipes] = useState(initialRecipes);
+  const [prevInitialRecommended, setPrevInitialRecommended] =
+    useState(initialRecommended);
 
-  useEffect(() => {
+  if (initialRecipes !== prevInitialRecipes) {
+    setPrevInitialRecipes(initialRecipes);
     setRecipes(initialRecipes);
+  }
+  if (initialRecommended !== prevInitialRecommended) {
+    setPrevInitialRecommended(initialRecommended);
     setRecommended(initialRecommended);
-  }, [initialRecipes, initialRecommended]);
+  }
 
   const refreshRecommendations = useCallback(async () => {
     try {
@@ -56,11 +65,16 @@ export function ProfileClient({
     setError(null);
     setMessage(null);
     try {
+      const cleanZip = cleanZipCode(location);
+      if (!isValidUsZip(cleanZip)) {
+        setError("Enter a valid US ZIP code (e.g. 90210).");
+        return;
+      }
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          preferred_location: cleanZipCode(location),
+          preferred_location: cleanZip,
           allergies: formatAllergies(allergies),
         }),
       });
@@ -69,6 +83,8 @@ export function ProfileClient({
         setError(data.message || "Update failed.");
         return;
       }
+      writeZipCookie(cleanZip);
+      setLocation(cleanZip);
       setMessage("Profile updated.");
       router.refresh();
     } catch {
@@ -96,6 +112,16 @@ export function ProfileClient({
           <p className="brand-mark">{APP_NAME}</p>
           <h1>{profile.username}</h1>
           <p className="lede">Update your kitchen prefs and browse saved recipes.</p>
+          <ol className="plan-steps">
+            <li>
+              Check a recipe to add it to this week&apos;s meals. Heart saves
+              it here for later.
+            </li>
+            <li>
+              Open <Link href="/plan">Meal plan</Link> to copy one shopping
+              list. Items on sale this week are tagged on it.
+            </li>
+          </ol>
         </section>
 
         <section className="profile-panel">
@@ -132,6 +158,11 @@ export function ProfileClient({
               <p className="eyebrow">Bookmarks</p>
               <h2>Saved recipes</h2>
             </div>
+            {recipes.length > 0 ? (
+              <Link href="/plan" className="ghost-button">
+                Plan meals
+              </Link>
+            ) : null}
           </div>
           {recipes.length === 0 ? (
             <p className="empty-state">No saved recipes yet. Generate some on the home page.</p>

@@ -1,4 +1,5 @@
-import { HomeClient } from "@/components/HomeClient";
+import type { Metadata } from "next";
+import { MealPlanClient } from "@/components/MealPlanClient";
 import { getLocalFlyerItems } from "@/lib/flyer";
 import { getCachedOrFreshItems } from "@/lib/flyer-scrape";
 import { isGroceryName } from "@/lib/grocery-categories";
@@ -6,18 +7,59 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { resolveZip, ZIP_COOKIE } from "@/lib/zip-preference";
 import { cookies } from "next/headers";
+import type { Recipe } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+export const metadata: Metadata = {
+  title: "Meal plan",
+  description:
+    "Turn selected recipes into an aisle-by-aisle buy list of missing ingredients.",
+};
+
+function mapSavedRecipe(row: {
+  recipe_id?: string;
+  recipes?:
+    | {
+        id?: string;
+        recipe_name: string;
+        ingredients: string;
+        description: string;
+        source?: string | null;
+      }
+    | Array<{
+        id?: string;
+        recipe_name: string;
+        ingredients: string;
+        description: string;
+        source?: string | null;
+      }>
+    | null;
+}): Recipe | null {
+  const recipe = Array.isArray(row.recipes) ? row.recipes[0] : row.recipes;
+  if (!recipe) return null;
+  return {
+    id: recipe.id ?? row.recipe_id,
+    Recipe_name: recipe.recipe_name,
+    Ingredients: recipe.ingredients,
+    Instructions: recipe.description,
+    source:
+      recipe.source === "generated"
+        ? "generated"
+        : recipe.source === "retrieved" || recipe.source === "seed"
+          ? "retrieved"
+          : undefined,
+  };
+}
+
+export default async function MealPlanPage() {
   const cookieStore = await cookies();
   const cookieZip = cookieStore.get(ZIP_COOKIE)?.value;
   let items = getLocalFlyerItems();
-  let flyerSource: "cache" | "scrape" | "seed" | "db" = "seed";
   let loggedIn = false;
   let username: string | null = null;
   let location = resolveZip(null, cookieZip);
-  let allergies = "None";
+  let savedRecipes: Recipe[] = [];
 
   if (isSupabaseConfigured()) {
     try {
@@ -28,22 +70,31 @@ export default async function HomePage() {
 
       if (user) {
         loggedIn = true;
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("username, preferred_location, allergies")
-          .eq("id", user.id)
-          .maybeSingle();
+        const [{ data: profile }, { data: savedRows }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("username, preferred_location")
+            .eq("id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("saved")
+            .select(
+              "recipe_id, recipes ( id, recipe_name, ingredients, description, source )"
+            )
+            .eq("user_id", user.id),
+        ]);
 
         username = profile?.username ?? user.email ?? "User";
         location = resolveZip(profile?.preferred_location, cookieZip);
-        allergies = profile?.allergies ?? "None";
+        savedRecipes = (savedRows || [])
+          .map(mapSavedRecipe)
+          .filter(Boolean) as Recipe[];
       }
 
       if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
         const flyer = await getCachedOrFreshItems({ postalCode: location });
         if (flyer.items.length) {
           items = flyer.items;
-          flyerSource = flyer.source;
         }
       } else {
         const withCat = await supabase
@@ -70,22 +121,20 @@ export default async function HomePage() {
               sale_story: row.sale_story,
               category: (row as { category?: string }).category,
             }));
-          flyerSource = "db";
         }
       }
     } catch (error) {
-      console.error("HomePage load error:", error);
+      console.error("MealPlanPage load error:", error);
     }
   }
 
   return (
-    <HomeClient
-      items={items}
-      flyerSource={flyerSource}
+    <MealPlanClient
+      savedRecipes={savedRecipes}
+      flyerItems={items}
       loggedIn={loggedIn}
       username={username}
       location={location}
-      allergies={allergies}
     />
   );
 }

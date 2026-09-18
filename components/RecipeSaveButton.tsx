@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import { useRef, useState, type MouseEvent } from "react";
+import Link from "next/link";
+import { ActionTooltip, useAnchoredPopup } from "@/components/ActionTooltip";
 import { ensureIngredientQuantities } from "@/lib/ingredients";
 import type { Recipe } from "@/lib/types";
 
@@ -23,8 +25,12 @@ export function RecipeSaveButton({
   onMessage,
   variant = "icon",
 }: RecipeSaveButtonProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [saved, setSaved] = useState(initiallySaved);
   const [busy, setBusy] = useState(false);
+  const [popupText, setPopupText] = useState("Log in to save");
+  const loginPopup = useAnchoredPopup(buttonRef, { interactive: true });
+  const statusPopup = useAnchoredPopup(buttonRef, { autoHideMs: 1800 });
 
   function setMessage(next: string | null) {
     onMessage?.(next);
@@ -34,11 +40,13 @@ export function RecipeSaveButton({
     event.preventDefault();
     event.stopPropagation();
     if (!loggedIn) {
-      setMessage("Log in to save recipes.");
+      setPopupText("Log in to save");
+      loginPopup.show();
       return;
     }
     setBusy(true);
     setMessage(null);
+    loginPopup.hide();
     try {
       const endpoint = saved ? "/api/recipes/delete" : "/api/recipes/save";
       const res = await fetch(endpoint, {
@@ -54,12 +62,14 @@ export function RecipeSaveButton({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const action = saved ? "unsave" : "save";
-        setMessage(
+        const text =
           data.message ||
-            (res.status >= 500
-              ? `Could not ${action} this recipe right now. Please try again.`
-              : `Unable to ${action} recipe.`)
-        );
+          (res.status >= 500
+            ? `Could not ${action} this recipe right now.`
+            : `Unable to ${action} recipe.`);
+        setPopupText(text);
+        statusPopup.show();
+        setMessage(text);
         return;
       }
       const next = !saved;
@@ -69,19 +79,21 @@ export function RecipeSaveButton({
         typeof data.recipe_id === "string" ? data.recipe_id : recipe.id
       );
     } catch {
-      setMessage(
-        saved
-          ? "Network error — could not unsave. Check your connection."
-          : "Network error — could not save. Check your connection."
-      );
+      const text = saved
+        ? "Network error — could not unsave."
+        : "Network error — could not save.";
+      setPopupText(text);
+      statusPopup.show();
+      setMessage(text);
     } finally {
       setBusy(false);
     }
   }
 
-  if (variant === "button") {
-    return (
+  const button =
+    variant === "button" ? (
       <button
+        ref={buttonRef}
         type="button"
         className="ghost-button"
         onClick={toggleSave}
@@ -90,19 +102,43 @@ export function RecipeSaveButton({
       >
         {busy ? "Saving…" : saved ? "Saved" : "Save"}
       </button>
+    ) : (
+      <button
+        ref={buttonRef}
+        type="button"
+        className="icon-button"
+        onClick={toggleSave}
+        disabled={busy}
+        aria-label={saved ? "Unsave recipe" : "Save recipe"}
+        title={saved ? "Unsave" : "Save"}
+      >
+        {saved ? "♥" : "♡"}
+      </button>
     );
-  }
 
   return (
-    <button
-      type="button"
-      className="icon-button"
-      onClick={toggleSave}
-      disabled={busy}
-      aria-label={saved ? "Unsave recipe" : "Save recipe"}
-      title={saved ? "Unsave" : "Save"}
-    >
-      {saved ? "♥" : "♡"}
-    </button>
+    <>
+      {button}
+      <ActionTooltip
+        open={loginPopup.open}
+        anchor={loginPopup.anchor}
+        interactive
+      >
+        <div className="action-tooltip-login">
+          <p>Log in to save recipes</p>
+          <div className="action-tooltip-login-actions">
+            <Link href="/login" onClick={(e) => e.stopPropagation()}>
+              Log in
+            </Link>
+            <Link href="/signup" onClick={(e) => e.stopPropagation()}>
+              Sign up
+            </Link>
+          </div>
+        </div>
+      </ActionTooltip>
+      <ActionTooltip open={statusPopup.open} anchor={statusPopup.anchor}>
+        {popupText}
+      </ActionTooltip>
+    </>
   );
 }

@@ -176,9 +176,14 @@ export default async function RecipePage({ params }: RecipePageProps) {
           <p>
             Want more dishes from this week&apos;s Walmart deals?
           </p>
-          <Link href="/home" className="primary-button recipe-page-cta-button">
-            Cook from the flyer
-          </Link>
+          <div className="recipe-page-cta-actions">
+            <Link href="/plan" className="primary-button recipe-page-cta-button">
+              Build a shopping list
+            </Link>
+            <Link href="/home" className="ghost-button recipe-page-cta-button">
+              Cook from the flyer
+            </Link>
+          </div>
         </aside>
       </main>
     </div>
